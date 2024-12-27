@@ -1,47 +1,93 @@
-global raquete
+global raquete_1Fn
+global raquete_2Fn
+global check_raquete
 
-extern obstacle_y
-extern obstacle_y2
+extern raquete_y_1
+extern raquete_y2_1 
+extern raquete_y_2
+extern raquete_y2_2
 extern line
 
-raquete:
+raquete_1Fn:
             MOV		AX, 35
             PUSH	AX
-            MOV		AX, [obstacle_y]
+            MOV		AX, [raquete_y_1]
             PUSH	AX
             MOV		AX, 35
             PUSH	AX
-            MOV		AX, [obstacle_y2]
+            MOV		AX, [raquete_y2_1]
             PUSH	AX
             CALL	line
 
             MOV		AX, 35
             PUSH	AX
-            MOV		AX, [obstacle_y2]
+            MOV		AX, [raquete_y2_1]
             PUSH	AX
             MOV		AX, 60
             PUSH    AX
-            MOV   	AX, [obstacle_y2]
+            MOV   	AX, [raquete_y2_1]
             PUSH 	AX
             CALL	line
 
             MOV		AX, 60
             PUSH	AX
-            MOV		AX, [obstacle_y]
+            MOV		AX, [raquete_y_1]
             PUSH	AX
             MOV		AX, 60
             PUSH    AX
-            MOV   	AX, [obstacle_y2]
+            MOV   	AX, [raquete_y2_1]
             PUSH 	AX
             CALL	line
 
             MOV		AX, 60
             PUSH	AX
-            MOV		AX, [obstacle_y]
+            MOV		AX, [raquete_y_1]
             PUSH	AX
             MOV		AX, 35
             PUSH    AX
-            MOV   	AX, [obstacle_y]
+            MOV   	AX, [raquete_y_1]
+            PUSH 	AX
+            CALL	line
+            RET
+
+raquete_2Fn:
+            MOV		AX, 575
+            PUSH	AX
+            MOV		AX, [raquete_y_2]
+            PUSH	AX
+            MOV		AX, 575
+            PUSH	AX
+            MOV		AX, [raquete_y2_2]
+            PUSH	AX
+            CALL	line
+
+            MOV		AX, 575
+            PUSH	AX
+            MOV		AX, [raquete_y2_2]
+            PUSH	AX
+            MOV		AX, 600
+            PUSH    AX
+            MOV   	AX, [raquete_y2_2]
+            PUSH 	AX
+            CALL	line
+
+            MOV		AX, 600
+            PUSH	AX
+            MOV		AX, [raquete_y_2]
+            PUSH	AX
+            MOV		AX, 600
+            PUSH    AX
+            MOV   	AX, [raquete_y2_2]
+            PUSH 	AX
+            CALL	line
+
+            MOV		AX, 600
+            PUSH	AX
+            MOV		AX, [raquete_y_2]
+            PUSH	AX
+            MOV		AX, 575
+            PUSH    AX
+            MOV   	AX, [raquete_y_2]
             PUSH 	AX
             CALL	line
             RET

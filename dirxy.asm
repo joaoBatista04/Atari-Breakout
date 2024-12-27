@@ -4,6 +4,10 @@ extern posX
 extern posY
 extern dirX
 extern dirY
+extern raquete_y_1
+extern raquete_y_2
+extern raquete_y2_1
+extern raquete_y2_2
 
 DirXY:	JMP		DirX
 
@@ -17,7 +21,46 @@ DirX:	MOV		AX, word[posX]
 		CMP		AX, BX
 		JE		direita
 
+		MOV		AX, word[posX]
+		MOV		BX, 564
+		CMP		AX, BX
+		JE		verify_raquete_2
+
+		MOV		AX, word[posX]
+		MOV		BX, 71
+		CMP		AX, BX
+		JE		verify_raquete_1
+
 		JNE		inc_dec_x
+
+
+verify_raquete_1:
+		MOV		AX, word[posY]
+		MOV		BX, word[raquete_y_1]
+		CMP		AX, BX
+		JG		verify_raquete_1_2
+		JMP		inc_dec_x
+
+verify_raquete_1_2:
+		MOV		AX, word[posY]
+		MOV		BX, word[raquete_y2_1]
+		CMP		AX, BX
+		JB		direita
+		JMP		inc_dec_x
+
+verify_raquete_2:
+		MOV		AX, word[posY]
+		MOV		BX, word[raquete_y_2]
+		CMP		AX, BX
+		JG		verify_raquete_2_2
+		JMP		inc_dec_x
+
+verify_raquete_2_2:
+		MOV		AX, word[posY]
+		MOV		BX, word[raquete_y2_2]
+		CMP		AX, BX
+		JB		esquerda
+		JMP		inc_dec_x
 
 esquerda:
 		MOV		word[dirX], 1

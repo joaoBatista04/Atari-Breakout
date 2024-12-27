@@ -12,6 +12,10 @@ global obstacle_x
 global obstacle_x2
 global obstacle_y
 global obstacle_y2
+global raquete_y_1
+global raquete_y2_1
+global raquete_y_2
+global raquete_y2_2
 
 extern DirXY
 extern plot_xy
@@ -21,7 +25,8 @@ extern circle
 extern cursor
 extern caracter
 extern rectangle
-extern raquete
+extern raquete_1Fn
+extern raquete_2Fn
 extern delay
 
 segment code
@@ -45,41 +50,21 @@ segment code
 		
 ;Desenhar Retas
 		MOV		byte[cor],branco_intenso	;antenas
-		MOV		AX,0
-		PUSH	AX
-		MOV		AX,0
-		PUSH	AX
-		MOV		AX,0
-		PUSH	AX
-		MOV		AX,479
-		PUSH	AX
-		CALL	line
-
-		MOV 	AX, 0
+		MOV 	AX, 30
 		PUSH	AX
 		MOV		AX, 0
 		PUSH	AX
-		MOV		AX, 639
+		MOV		AX, 600
 		PUSH 	AX
 		MOV		AX, 0
 		PUSH	AX
 		CALL	line
 
-		MOV 	AX, 639
-		PUSH	AX
-		MOV		AX, 0
-		PUSH	AX
-		MOV		AX, 639
-		PUSH 	AX
-		MOV		AX, 479
-		PUSH	AX
-		CALL	line
-
-		MOV 	AX, 0
+		MOV 	AX, 30
 		PUSH	AX
 		MOV		AX, 479
 		PUSH	AX
-		MOV		AX, 639
+		MOV		AX, 600
 		PUSH 	AX
 		MOV		AX, 479
 		PUSH	AX
@@ -90,8 +75,8 @@ segment code
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
+		
 		MOV		CX, 5
-
 walls:	CALL	rectangle
 		LOOP 	walls
 
@@ -100,12 +85,20 @@ walls:	CALL	rectangle
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
+		
 		MOV		CX, 5
-
 walls2:	CALL	rectangle
 		LOOP 	walls2
 
-ver_off:MOV		AH, 0Bh
+inicializa_raquetes:
+		MOV		byte[cor], rosa
+		CALL	raquete_1Fn
+
+		MOV		byte[cor], rosa
+		CALL	raquete_2Fn
+
+ver_off:
+		MOV		AH, 0Bh
 		INT 	21h
 		CMP		AL, 0
 
@@ -114,12 +107,13 @@ ver_off:MOV		AH, 0Bh
 
 off:	MOV    	AH,08h
 		INT     21h
-		CMP		AL, 's'
+		CMP		AL, 'p'
 		JNE		check_raquete
 
 		JMP 	sai
 
-sai:	MOV  	AH,0   				; set video mode
+sai:	
+		MOV  	AH,0   				; set video mode
 	    MOV  	AL,[modo_anterior] 	; modo anterior
 	    INT  	10h
 		MOV     AX,4C00h
@@ -127,35 +121,87 @@ sai:	MOV  	AH,0   				; set video mode
 
 check_raquete:
 		CMP		AL, 'w'
-		JE		raquete_up
+		JE		verify_upper_bound
 
-		CMP		AL, 'd'
-		JE		raquete_down
+		CMP		AL, 's'
+		JE		verify_lower_bound
+
+		CMP		AL, 'r'
+		JE		verify_upper_bound_2
+
+		CMP		AL, 'f'
+		JE		verify_lower_bound_2
 
 		JMP		print_ball
+
+verify_upper_bound:		
+		MOV		BX, word[raquete_y2_1]
+		CMP		BX, 470
+		JL		raquete_up
+		JMP		print_ball
+
+verify_upper_bound_2:		
+		MOV		BX, word[raquete_y2_2]
+		CMP		BX, 470
+		JL		raquete_up_2
+		JMP		print_ball
+
+verify_lower_bound:		
+		MOV		BX, word[raquete_y_1]
+		CMP		BX, 5
+		JG		raquete_down
+		JMP		print_ball
+
+verify_lower_bound_2:		
+		MOV		BX, word[raquete_y_2]
+		CMP		BX, 5
+		JG		raquete_down_2
+		JMP		print_ball
+
 raquete_up:
 		MOV 	AX, word[raquete_1]
 		ADD		AX, 10
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
+
+raquete_up_2:
+		MOV 	AX, word[raquete_2]
+		ADD		AX, 10
+		MOV 	word[raquete_2], AX
+		JMP		raquete_draw
+
 raquete_down:
 		MOV 	AX, word[raquete_1]
 		SUB		AX, 10
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
+
+raquete_down_2:
+		MOV 	AX, word[raquete_2]
+		SUB		AX, 10
+		MOV 	word[raquete_2], AX
+		JMP		raquete_draw
+
 raquete_draw:	
 		MOV		byte[cor], pRETo
-		CALL	rectangle
+		CALL	raquete_1Fn
+		CALL	raquete_2Fn
 		
-		MOV		word[obstacle_x], 35
-		MOV		word[obstacle_x2], 60
 		MOV		BX, [raquete_1]
 		ADD		BX, 5
-		MOV		word[obstacle_y], BX
+		MOV		word[raquete_y_1], BX
 		ADD		BX, 81
-		MOV		word[obstacle_y2], BX	
+		MOV		word[raquete_y2_1], BX	
 		MOV		byte[cor], rosa
-		CALL	rectangle
+		CALL	raquete_1Fn
+
+		MOV		BX, [raquete_2]
+		ADD		BX, 5
+		MOV		word[raquete_y_2], BX
+		ADD		BX, 81
+		MOV		word[raquete_y2_2], BX	
+		MOV		byte[cor], rosa
+		CALL	raquete_2Fn
 
 		JMP		print_ball
 
@@ -220,6 +266,12 @@ obstacle_y2		dw		86
 obstacle_x		dw		5
 obstacle_x2		dw		30
 
+raquete_y_1		dw		5
+raquete_y2_1	dw		86
+
+raquete_y_2		dw		5
+raquete_y2_2	dw		86
+
 vel				dw		10
 posX			dw		320
 posY			dw		240
@@ -227,6 +279,7 @@ dirX			dw		0
 dirY			dw		0
 
 raquete_1		dw		0
+raquete_2		dw		0
 ;*************************************************************************
 segment stack stack
 	resb	512

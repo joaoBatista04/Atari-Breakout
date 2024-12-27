@@ -29,3 +29,5 @@ cursor:
 		POP		AX
 		POPF
 		RET
+
+segment data
