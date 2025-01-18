@@ -126,10 +126,10 @@ check_raquete:
 		CMP		AL, 's'
 		JE		verify_lower_bound
 
-		CMP		AL, 'r'
+		CMP		AL, 72 ; Código de scan da seta para cima
 		JE		verify_upper_bound_2
 
-		CMP		AL, 'f'
+		CMP		AL, 80 ; Código de scan da seta para baixo
 		JE		verify_lower_bound_2
 
 		JMP		print_ball
