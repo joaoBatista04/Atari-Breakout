@@ -107,17 +107,65 @@ ver_off:
 
 off:	MOV    	AH,08h
 		INT     21h
-		CMP		AL, 'p'
+		CMP		AL, 'q'
 		JNE		check_raquete
 
-		JMP 	sai
+		JMP 	exit_menu
 
-sai:	
+
+exit_menu:
+	;Escrever uma mensagem
+    	MOV     CX,22				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,30				;coluna 0-79
+		MOV		byte[cor],branco_intenso
+l4:
+		CALL	cursor
+    	MOV     AL,[BX+mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l4
+
+		MOV    	AH,08h
+		INT     21h
+	    MOV  	AH,0   				; set video mode
+	    MOV  	AL,[modo_anterior] 	; modo anterior
+	    INT  	10h
+		MOV     AX,4C00h
+		INT     21h
+
+	MOV			AH, 08h
+	INT 		21h
+	CMP 		AL, 's'
+	JE 			exit
+	CMP 		AL, 'n'
+	JE 			off ;função que, em tese, retomaria o jogo
+ 
+	JMP 		exit_menu ; a ideia seria fazer com que nada mudasse na tela ate digitarem s ou n
+
+	exit:	
 		MOV  	AH,0   				; set video mode
 	    MOV  	AL,[modo_anterior] 	; modo anterior
 	    INT  	10h
 		MOV     AX,4C00h
 		INT     21h
+
+print_ball:
+		MOV		byte[cor], pRETo
+		MOV		AX, word[posX]
+		PUSH 	AX
+		MOV		AX, word[posY]
+		PUSH	AX
+		MOV		AX, 10
+		PUSH 	AX
+		CALL	circle
+
+		CALL	DirXY
+
+		JMP		draw
 
 check_raquete:
 		CMP		AL, 'w'
@@ -205,19 +253,6 @@ raquete_draw:
 
 		JMP		print_ball
 
-print_ball:
-		MOV		byte[cor], pRETo
-		MOV		AX, word[posX]
-		PUSH 	AX
-		MOV		AX, word[posY]
-		PUSH	AX
-		MOV		AX, 10
-		PUSH 	AX
-		CALL	circle
-
-		CALL	DirXY
-
-		JMP		draw
 
 draw:
 		MOV		byte[cor], vermelho
@@ -259,7 +294,7 @@ linha   		dw  	0
 coluna  		dw  	0
 deltAX			dw		0
 deltay			dw		0	
-mens    		db  	'Funcao Grafica'
+mens    		db  	'Deseja mesmo sair? s/n'
 
 obstacle_y		dw		5
 obstacle_y2		dw		86
@@ -280,6 +315,7 @@ dirY			dw		0
 
 raquete_1		dw		0
 raquete_2		dw		0
+
 ;*************************************************************************
 segment stack stack
 	resb	512
