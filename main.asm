@@ -48,7 +48,64 @@ segment code
    		MOV     	AH,0
     	INT     	10h
 		
+
+intro_menu:
+	; Escrever a mensagem (Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d))
+	MOV     CX, 65              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, 14              ; Linha 0-29
+	MOV     DL, 7               ; Coluna 0-79
+	MOV     byte[cor], branco_intenso
+l3:
+	CALL	cursor
+	MOV     AL, [BX + mens_intro]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l3
+
+wait_input:
+	; Esperar entrada do usuário
+	MOV     AH, 08h
+	INT     21h
+	CMP     AL, 'f'
+	JE      vel_f
+	CMP     AL, 'm'
+	JE      vel_m
+	CMP     AL, 'd'
+	JE      vel_d
+	JMP     wait_input          ; Volta para aguardar entrada válida
+
+vel_f:
+	MOV     word[vel], 15        ; Configurar velocidade para "fácil"
+	JMP 	clear_intro_screen
+
+vel_m:
+	MOV     word[vel], 10       ; Configurar velocidade para "médio"
+	JMP 	clear_intro_screen
+
+vel_d:
+	MOV     word[vel], 5       ; Configurar velocidade para "difícil"
+	JMP 	clear_intro_screen
+
+clear_intro_screen:
+	; apagar a mensagem (Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d))
+	MOV     CX, 65              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, 14              ; Linha 0-29
+	MOV     DL, 7               ; Coluna 0-79
+	MOV     byte[cor], pRETo
+l1:
+	CALL	cursor
+	MOV     AL, [BX + mens_intro]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l1
+
+
 ;Desenhar Retas
+draw_lines:
 		MOV		byte[cor],branco_intenso	;antenas
 		MOV 	AX, 30
 		PUSH	AX
@@ -295,7 +352,7 @@ coluna  		dw  	0
 deltAX			dw		0
 deltay			dw		0	
 mens    		db  	'Deseja mesmo sair? s/n'
-
+mens_intro		db 		'Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d)'
 obstacle_y		dw		5
 obstacle_y2		dw		86
 obstacle_x		dw		5
