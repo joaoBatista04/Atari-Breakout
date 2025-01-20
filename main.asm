@@ -127,7 +127,7 @@ draw_lines:
 		PUSH	AX
 		CALL	line
 
-		MOV		byte[cor], verde
+		MOV		byte[cor], vermelho
 		MOV		word[obstacle_x], 5
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
@@ -137,7 +137,7 @@ draw_lines:
 walls:	CALL	rectangle
 		LOOP 	walls
 
-		MOV		byte[cor], azul_claro
+		MOV		byte[cor], amarelo
 		MOV		word[obstacle_x], 605
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
@@ -148,10 +148,10 @@ walls2:	CALL	rectangle
 		LOOP 	walls2
 
 inicializa_raquetes:
-		MOV		byte[cor], rosa
+		MOV		byte[cor], magenta
 		CALL	raquete_1Fn
 
-		MOV		byte[cor], rosa
+		MOV		byte[cor], azul_claro
 		CALL	raquete_2Fn
 
 ver_off:
@@ -308,7 +308,7 @@ raquete_draw:
 		MOV		word[raquete_y_1], BX
 		ADD		BX, 81
 		MOV		word[raquete_y2_1], BX	
-		MOV		byte[cor], rosa
+		MOV		byte[cor], magenta
 		CALL	raquete_1Fn
 
 		MOV		BX, [raquete_2]
@@ -316,14 +316,14 @@ raquete_draw:
 		MOV		word[raquete_y_2], BX
 		ADD		BX, 81
 		MOV		word[raquete_y2_2], BX	
-		MOV		byte[cor], rosa
+		MOV		byte[cor], azul_claro
 		CALL	raquete_2Fn
 
 		JMP		print_ball
 
 
 draw:
-		MOV		byte[cor], vermelho
+		MOV		byte[cor], verde
 		MOV		AX, word[posX]
 		PUSH 	AX
 		MOV		AX, word[posY]
