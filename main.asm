@@ -186,24 +186,35 @@ l4:
 	
     	LOOP    l4
 
-		MOV    	AH,08h
+wait_exit_input:
+		; Esperar entrada do usuário
+		MOV     AH, 08h
 		INT     21h
-	    MOV  	AH,0   				; set video mode
-	    MOV  	AL,[modo_anterior] 	; modo anterior
-	    INT  	10h
-		MOV     AX,4C00h
-		INT     21h
+		CMP     AL, 's'
+		JE      exit
+		CMP     AL, 'n'
+		JE      clear_exit_screen
+		JMP     wait_exit_input          ; Volta para aguardar entrada válida
 
-	MOV			AH, 08h
-	INT 		21h
-	CMP 		AL, 's'
-	JE 			exit
-	CMP 		AL, 'n'
-	JE 			off ;função que, em tese, retomaria o jogo
- 
-	JMP 		exit_menu ; a ideia seria fazer com que nada mudasse na tela ate digitarem s ou n
+clear_exit_screen:
+	;apaga uma mensagem
+    	MOV     CX,22				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,30				;coluna 0-79
+		MOV		byte[cor],pRETo
+l5:
+		CALL	cursor
+    	MOV     AL,[BX+mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l5
 
-	exit:	
+		JMP		print_ball
+
+exit:	
 		MOV  	AH,0   				; set video mode
 	    MOV  	AL,[modo_anterior] 	; modo anterior
 	    INT  	10h
