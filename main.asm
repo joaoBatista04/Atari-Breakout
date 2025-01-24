@@ -28,6 +28,7 @@ extern rectangle
 extern raquete_1Fn
 extern raquete_2Fn
 extern delay
+extern full_rectangle
 
 segment code
 ..start:
@@ -106,7 +107,7 @@ l1:
 
 ;Desenhar Retas
 draw_lines:
-		MOV		byte[cor],branco_intenso	;antenas
+		MOV		byte[cor],branco_intenso
 		MOV 	AX, 30
 		PUSH	AX
 		MOV		AX, 0
@@ -127,25 +128,139 @@ draw_lines:
 		PUSH	AX
 		CALL	line
 
-		MOV		byte[cor], vermelho
+		MOV		byte[cor], azul
 		MOV		word[obstacle_x], 5
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
 		
-		MOV		CX, 5
-walls:	CALL	rectangle
-		LOOP 	walls
+		
+walls:	CALL	full_rectangle
+		
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+		MOV		byte[cor], azul_claro
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+		
+		MOV		byte[cor], verde
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
 
 		MOV		byte[cor], amarelo
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+		
+		MOV		byte[cor], vermelho
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+
+
+		MOV		byte[cor], azul
 		MOV		word[obstacle_x], 605
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
 		
-		MOV		CX, 5
-walls2:	CALL	rectangle
-		LOOP 	walls2
+		
+walls2:	CALL	full_rectangle
+		
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+		MOV		byte[cor], azul_claro
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+		
+		MOV		byte[cor], verde
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+		MOV		byte[cor], amarelo
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+
+		
+		MOV		byte[cor], vermelho
+
+		CALL	full_rectangle
+
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
 
 inicializa_raquetes:
 		MOV		byte[cor], magenta
@@ -165,9 +280,12 @@ ver_off:
 off:	MOV    	AH,08h
 		INT     21h
 		CMP		AL, 'q'
-		JNE		check_raquete
+		JE		exit_menu
 
-		JMP 	exit_menu
+		CMP 	AL, 'p'
+		JE 		paused_menu
+		JMP 	check_raquete
+
 
 
 exit_menu:
@@ -234,6 +352,49 @@ print_ball:
 		CALL	DirXY
 
 		JMP		draw
+
+
+paused_menu:
+		;Escrever uma mensagem
+    	MOV     CX,7				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14 			;linha 0-29
+    	MOV     DL,36				;coluna 0-79
+		MOV		byte[cor],branco_intenso
+
+l7:
+		CALL	cursor
+    	MOV     AL,[BX+paused_mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l7
+
+		MOV    	AH,08h
+		INT     21h
+		CMP		AL, 'p'
+		JE		quit_pause	
+		JMP		wait_input
+
+quit_pause:
+	;Escrever uma mensagem
+    	MOV     CX,7				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,36				;coluna 0-79
+		MOV		byte[cor],pRETo
+
+l8:
+		CALL	cursor
+    	MOV     AL,[BX+paused_mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l8
+
+		JMP check_raquete
 
 check_raquete:
 		CMP		AL, 'w'
@@ -383,6 +544,8 @@ dirY			dw		0
 
 raquete_1		dw		0
 raquete_2		dw		0
+
+paused_mens		db 		'Pausado'
 
 ;*************************************************************************
 segment stack stack
