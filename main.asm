@@ -2,6 +2,7 @@
 ; corrigido erro de arredondamento na rotina line.
 ; circle e full_circle DISPonibilizados por JEfferson Moro em 10/2009
 ; 
+global modo_anterior
 global cor
 global vel
 global posX
@@ -21,7 +22,8 @@ global	pRETo
 global verde
 global vermelho
 global amarelo		
-global branco_intenso	
+global branco_intenso
+global mens_new
 global mens_intro
 global mens_facil		
 global mens_medio		
@@ -35,8 +37,11 @@ global dif_col_pos
 global select_arrow	
 global arrow_col_pos
 global arrow_line_pos
+global mens_game
+global mens_over
 
-;extern intro_menu
+extern game_over
+extern intro_menu
 extern DirXY
 extern plot_xy
 extern line
@@ -69,301 +74,8 @@ segment code
    		MOV     	AH,0
     	INT     	10h
 		
-
-;CALL intro_menu
-
-
-intro_menu:
-	; Escrever a mensagem (Selecione a dificuldade do jogo:)
-	MOV     CX, 32              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, 12              ; Linha 0-29
-	MOV     DL, 24               ; Coluna 0-79
-	MOV     byte[cor], branco_intenso
-l3:
-	CALL	cursor
-	MOV     AL, [BX + mens_intro]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l3
-
-	MOV     byte[cor], verde
-	CALL draw_facil
-
-	MOV     byte[cor], branco_intenso
-	CALL draw_medio
-	CALL draw_dif
-	CALL draw_facil_arrow
-	JMP wait_input
-
-draw_facil:
-	; Escrever a mensagem (Fácil)
-	MOV     CX, 5              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [facil_line_pos]              ; Linha 0-29
-	MOV     DL, [facil_col_pos]               ; Coluna 0-79
-	
-l9:
-	CALL	cursor
-	MOV     AL, [BX + mens_facil]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l9
-
-	RET
-
-draw_medio:
-	; Escrever a mensagem (Médio)
-	MOV     CX, 5              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [medio_line_pos]              ; Linha 0-29
-	MOV     DL, [medio_col_pos]               ; Coluna 0-79
-l10:
-	CALL	cursor
-	MOV     AL, [BX + mens_medio]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l10
-
-	RET
-
-draw_dif:
-	; Escrever a mensagem (Difícil)
-	MOV     CX, 7              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [dif_line_pos]              ; Linha 0-29
-	MOV     DL, [dif_col_pos]               ; Coluna 0-79
-l11:
-	CALL	cursor
-	MOV     AL, [BX + mens_dificil]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l11
-
-	RET
-
-draw_facil_arrow:
-
-	; Escrever a seta seletora (>)
-	MOV     CX, 1              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [facil_line_pos]              ; Linha 0-29
-	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], verde
-
-l20:
-	CALL	cursor
-	MOV     AL, [BX + select_arrow]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l20
-
-	RET
-
-draw_medio_arrow:
-
-	; Escrever a seta seletora (>)
-	MOV     CX, 1              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [medio_line_pos]              ; Linha 0-29
-	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], amarelo
-l21:
-	CALL	cursor
-	MOV     AL, [BX + select_arrow]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l21
-
-	RET
-
-draw_dif_arrow:
-
-	; Escrever a seta seletora (>)
-	MOV     CX, 1              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [dif_line_pos]              ; Linha 0-29
-	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], vermelho
-l22:
-	CALL	cursor
-	MOV     AL, [BX + select_arrow]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l22
-
-	RET
-;----------------- fim do desenho do intro menu ----------------------
-
-
-erase_arrow:
-	; Escrever a seta seletora (>)
-	MOV     CX, 1              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, [arrow_line_pos]              ; Linha 0-29
-	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], pRETo
-l17:
-	CALL	cursor
-	MOV     AL, [BX + select_arrow]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l17
-
-	RET
-wait_input:
-	; Esperar entrada do usuário
-	MOV     AH, 08h
-	INT     21h
-	CMP     AL, 72
-	JE		pos_up_verification
-	CMP     AL, 80
-	JE		pos_down_verification
-	CMP     AL, 13
-	JE		pos_enter_verification
-	JMP     wait_input          ; Volta para aguardar entrada válida
-
-pos_enter_verification:
-
-	CMP 	word[arrow_line_pos], 14
-	JE		select_facil
-	CMP		word[arrow_line_pos], 16
-	JE		select_medio
-	CMP		word[arrow_line_pos], 18
-	JE		select_dificil
-	JMP 	wait_input
-
-select_facil:
-	MOV     word[vel], 15        ; Configurar velocidade para "fácil"
-	JMP 	clear_intro_screen
-
-select_medio:
-	MOV     word[vel], 10       ; Configurar velocidade para "médio"
-	JMP 	clear_intro_screen
-
-select_dificil:
-	MOV     word[vel], 5       ; Configurar velocidade para "difícil"
-	JMP 	clear_intro_screen
-	
-pos_up_verification:
-	CALL 	erase_arrow
-
-	CMP		word[arrow_line_pos], 16	;medio
-	JE		move_arrow_medio_to_facil
-	CMP		word[arrow_line_pos], 18	;dificil
-	JE		move_arrow_dif_to_medio
-
-	MOV     byte[cor], verde
-	CALL	draw_facil_arrow
-	JMP 	wait_input
-
-pos_down_verification:
-	CALL 	erase_arrow
-
-	CMP 	word[arrow_line_pos], 14	;facil
-	JE		move_arrow_facil_to_medio
-	CMP		word[arrow_line_pos], 16	;medio
-	JE		move_arrow_medio_to_dif
-	
-	MOV     byte[cor], vermelho
-	CALL 	draw_dif_arrow
-	JMP 	wait_input
-
-
-move_arrow_medio_to_facil:
-
-	MOV     byte[cor], branco_intenso
-	CALL	draw_medio
-
-	JMP move_arrow_facil
-
-move_arrow_dif_to_medio:
-
-	MOV     byte[cor], branco_intenso
-	CALL	draw_dif
-
-	JMP move_arrow_medio
-
-move_arrow_facil_to_medio:
-
-	MOV     byte[cor], branco_intenso
-	CALL	draw_facil
-
-	JMP move_arrow_medio
-
-move_arrow_medio_to_dif:
-
-	MOV     byte[cor], branco_intenso
-	CALL	draw_medio
-
-	JMP move_arrow_dif
-
-
-move_arrow_facil:
-	
-	MOV word[arrow_line_pos], 14
-
-	MOV     byte[cor], verde
-	CALL 	draw_facil_arrow
-
-	MOV     byte[cor], verde
-	CALL	draw_facil
-
-	JMP wait_input
-
-move_arrow_medio:
-	
-	MOV word[arrow_line_pos], 16
-
-	MOV     byte[cor], amarelo
-	CALL draw_medio_arrow
-
-	MOV     byte[cor], amarelo
-	CALL	draw_medio
-
-	JMP wait_input
-
-move_arrow_dif:
-	
-	MOV word[arrow_line_pos], 18
-	
-	MOV     byte[cor], vermelho
-	CALL draw_dif_arrow
-
-	MOV     byte[cor], vermelho
-	CALL	draw_dif
-	JMP wait_input
-
-
-clear_intro_screen:
-	; apagar a mensagem (Selecione a dificuldade do jogo:)
-	MOV     CX, 32              ; Número de caracteres
-	MOV     BX, 0
-	MOV     DH, 12              ; Linha 0-29
-	MOV     DL, 24               ; Coluna 0-79
-	MOV     byte[cor], pRETo
-
-l12:
-	CALL	cursor
-	MOV     AL, [BX + mens_intro]
-	CALL	caracter
-	INC     BX                  ; Próximo caractere
-	INC     DL                  ; Avança a coluna
-	LOOP    l12
-
-	MOV     byte[cor], pRETo
-	CALL	draw_facil
-	CALL	draw_medio
-	CALL	draw_dif
-	CALL 	erase_arrow
+;Menu inicial do jogo
+		CALL intro_menu
 
 ;Desenhar Retas
 draw_lines:
@@ -459,6 +171,11 @@ inicializa_raquetes:
 
 		MOV		byte[cor], azul_claro
 		CALL	raquete_2Fn
+		JMP ver_off
+
+jump_to_game_over:
+	CALL game_over
+	JMP	check_raquete
 
 ver_off:
 		MOV		AH, 0Bh
@@ -472,9 +189,10 @@ off:	MOV    	AH,08h
 		INT     21h
 		CMP		AL, 'q'
 		JE		exit_menu
-
 		CMP 	AL, 'p'
 		JE 		paused_menu
+		CMP		AL, 'o'
+		JE		jump_to_game_over
 		JMP 	check_raquete
 
 exit_menu:
@@ -486,7 +204,7 @@ exit_menu:
 		MOV		byte[cor],branco_intenso
 l4:
 		CALL	cursor
-    	MOV     AL,[BX+mens]
+    	MOV     AL,[BX+mens_exit]
 		CALL	caracter
     	INC     BX					;proximo caracter
 		INC		DL					;avanca a coluna
@@ -497,7 +215,7 @@ wait_exit_input:
 		; Esperar entrada do usuário
 		MOV     AH, 08h
 		INT     21h
-		CMP     AL, 's'
+		CMP     AL, 'y'
 		JE      exit
 		CMP     AL, 'n'
 		JE      clear_exit_screen
@@ -512,7 +230,7 @@ clear_exit_screen:
 		MOV		byte[cor],pRETo
 l5:
 		CALL	cursor
-    	MOV     AL,[BX+mens]
+    	MOV     AL,[BX+mens_exit]
 		CALL	caracter
     	INC     BX					;proximo caracter
 		INC		DL					;avanca a coluna
@@ -537,11 +255,8 @@ print_ball:
 		MOV		AX, 10
 		PUSH 	AX
 		CALL	circle
-
 		CALL	DirXY
-
 		JMP		draw
-
 
 paused_menu:
 		;Escrever uma mensagem
@@ -557,7 +272,6 @@ l7:
 		CALL	caracter
     	INC     BX					;proximo caracter
 		INC		DL					;avanca a coluna
-	
     	LOOP    l7
 
 wait_paused_menu:
@@ -581,7 +295,6 @@ l8:
 		CALL	caracter
     	INC     BX					;proximo caracter
 		INC		DL					;avanca a coluna
-	
     	LOOP    l8
 
 		JMP check_raquete
@@ -589,13 +302,10 @@ l8:
 check_raquete:
 		CMP		AL, 'w'
 		JE		verify_upper_bound
-
 		CMP		AL, 's'
 		JE		verify_lower_bound
-
 		CMP		AL, 72 ; Código de scan da seta para cima
 		JE		verify_upper_bound_2
-
 		CMP		AL, 80 ; Código de scan da seta para baixo
 		JE		verify_lower_bound_2
 
@@ -712,12 +422,15 @@ coluna  		dw  	0
 deltAX			dw		0
 deltay			dw		0	
 
-mens    		db  	'Deseja mesmo sair? s/n'
-mens_intro		db 		'Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d)'
+mens_new		db		'Gostaria de iniciar uma nova partida? y/n'
+mens_exit    	db  	'Deseja mesmo sair? y/n'
+mens_intro		db 		'Selecione a dificuldade do jogo:'
 
 mens_facil		db 		'Facil'
 mens_medio		db		'Medio'
 mens_dificil	db		'Dificil'
+mens_game		db		'GAME'
+mens_over		db		'OVER'
 
 facil_line_pos	dw		14
 facil_col_pos	dw		26

@@ -1,12 +1,6 @@
 global intro_menu
 
 extern cor		
-extern branco_intenso
-extern	pRETo
-extern verde
-extern vermelho
-extern amarelo		
-extern branco_intenso	
 extern mens_intro
 extern mens_facil		
 extern mens_medio		
@@ -20,10 +14,9 @@ extern dif_col_pos
 extern select_arrow	
 extern arrow_col_pos
 extern arrow_line_pos
-
 extern cursor
 extern caracter
-
+extern vel
 
 intro_menu:
 	; Escrever a mensagem (Selecione a dificuldade do jogo:)
@@ -31,7 +24,11 @@ intro_menu:
 	MOV     BX, 0
 	MOV     DH, 12              ; Linha 0-29
 	MOV     DL, 24               ; Coluna 0-79
-	MOV     byte[cor], branco_intenso
+
+	;MOV     byte[cor], branco_intenso
+
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
 l3:
 	CALL	cursor
 	MOV     AL, [BX + mens_intro]
@@ -40,10 +37,18 @@ l3:
 	INC     DL                  ; Avança a coluna
 	LOOP    l3
 
-	MOV     byte[cor], verde
+	;MOV     byte[cor], verde
+
+	MOV AL, 0x02          ;Cor verde
+    MOV byte [cor], AL
+
 	CALL draw_facil
 
-	MOV     byte[cor], branco_intenso
+	;MOV     byte[cor], branco_intenso
+
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
+
 	CALL draw_medio
 	CALL draw_dif
 	CALL draw_facil_arrow
@@ -105,7 +110,10 @@ draw_facil_arrow:
 	MOV     BX, 0
 	MOV     DH, [facil_line_pos]              ; Linha 0-29
 	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], verde
+	;MOV     byte[cor], verde
+
+	MOV AL, 0x02          ;Cor verde
+    MOV byte [cor], AL
 
 l20:
 	CALL	cursor
@@ -124,7 +132,11 @@ draw_medio_arrow:
 	MOV     BX, 0
 	MOV     DH, [medio_line_pos]              ; Linha 0-29
 	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], amarelo
+
+	;MOV     byte[cor], amarelo
+
+	MOV AL, 0x0E          ;Cor amarelo
+    MOV byte [cor], AL
 l21:
 	CALL	cursor
 	MOV     AL, [BX + select_arrow]
@@ -142,7 +154,12 @@ draw_dif_arrow:
 	MOV     BX, 0
 	MOV     DH, [dif_line_pos]              ; Linha 0-29
 	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], vermelho
+	
+	;MOV     byte[cor], vermelho
+
+	MOV AL, 0x04          ;Cor vermelho
+    MOV byte [cor], AL
+
 l22:
 	CALL	cursor
 	MOV     AL, [BX + select_arrow]
@@ -161,7 +178,12 @@ erase_arrow:
 	MOV     BX, 0
 	MOV     DH, [arrow_line_pos]              ; Linha 0-29
 	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
-	MOV     byte[cor], pRETo
+	
+	;MOV     byte[cor], pRETo
+
+	MOV AL, 0x00          ; Cor preta
+    MOV byte [cor], AL
+
 l17:
 	CALL	cursor
 	MOV     AL, [BX + select_arrow]
@@ -213,7 +235,11 @@ pos_up_verification:
 	CMP		word[arrow_line_pos], 18	;dificil
 	JE		move_arrow_dif_to_medio
 
-	MOV     byte[cor], verde
+	;MOV     byte[cor], verde
+
+	MOV AL, 0x02          ;Cor verde
+    MOV byte [cor], AL
+
 	CALL	draw_facil_arrow
 	JMP 	wait_input
 
@@ -225,35 +251,49 @@ pos_down_verification:
 	CMP		word[arrow_line_pos], 16	;medio
 	JE		move_arrow_medio_to_dif
 	
-	MOV     byte[cor], vermelho
+	;MOV     byte[cor], vermelho
+
+	MOV AL, 0x04          ;Cor vermelho
+    MOV byte [cor], AL
+
 	CALL 	draw_dif_arrow
 	JMP 	wait_input
 
 
 move_arrow_medio_to_facil:
 
-	MOV     byte[cor], branco_intenso
+	;MOV     byte[cor], branco_intenso
+
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
 	CALL	draw_medio
 
 	JMP move_arrow_facil
 
 move_arrow_dif_to_medio:
 
-	MOV     byte[cor], branco_intenso
+	;MOV     byte[cor], branco_intenso
+
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
 	CALL	draw_dif
 
 	JMP move_arrow_medio
 
 move_arrow_facil_to_medio:
 
-	MOV     byte[cor], branco_intenso
+	;MOV     byte[cor], branco_intenso
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
 	CALL	draw_facil
 
 	JMP move_arrow_medio
 
 move_arrow_medio_to_dif:
 
-	MOV     byte[cor], branco_intenso
+	;MOV     byte[cor], branco_intenso
+	MOV AL, 0x0F          ;Cor branco intenso
+    MOV byte [cor], AL
 	CALL	draw_medio
 
 	JMP move_arrow_dif
@@ -263,10 +303,17 @@ move_arrow_facil:
 	
 	MOV word[arrow_line_pos], 14
 
-	MOV     byte[cor], verde
+	;MOV     byte[cor], verde
+
+	MOV AL, 0x02          ;Cor verde
+    MOV byte [cor], AL
+
 	CALL 	draw_facil_arrow
 
-	MOV     byte[cor], verde
+	;MOV     byte[cor], verde
+
+	MOV AL, 0x02          ;Cor verde
+    MOV byte [cor], AL
 	CALL	draw_facil
 
 	JMP wait_input
@@ -275,10 +322,16 @@ move_arrow_medio:
 	
 	MOV word[arrow_line_pos], 16
 
-	MOV     byte[cor], amarelo
+	;MOV     byte[cor], amarelo
+
+	MOV AL, 0x0E          ;Cor amarelo
+    MOV byte [cor], AL
 	CALL draw_medio_arrow
 
-	MOV     byte[cor], amarelo
+	;MOV     byte[cor], amarelo
+
+	MOV AL, 0x0E          ;Cor amarelo
+    MOV byte [cor], AL
 	CALL	draw_medio
 
 	JMP wait_input
@@ -287,10 +340,16 @@ move_arrow_dif:
 	
 	MOV word[arrow_line_pos], 18
 	
-	MOV     byte[cor], vermelho
+	;MOV     byte[cor], vermelho
+
+	MOV AL, 0x04          ;Cor vermelho
+    MOV byte [cor], AL
 	CALL draw_dif_arrow
 
-	MOV     byte[cor], vermelho
+	;MOV     byte[cor], vermelho
+
+	MOV AL, 0x04          ;Cor vermelho
+    MOV byte [cor], AL
 	CALL	draw_dif
 	JMP wait_input
 
@@ -301,7 +360,10 @@ clear_intro_screen:
 	MOV     BX, 0
 	MOV     DH, 12              ; Linha 0-29
 	MOV     DL, 24               ; Coluna 0-79
-	MOV     byte[cor], pRETo
+	;MOV     byte[cor], pRETo
+
+	MOV AL, 0x00          ; Cor preta
+    MOV byte [cor], AL
 
 l12:
 	CALL	cursor
@@ -311,7 +373,11 @@ l12:
 	INC     DL                  ; Avança a coluna
 	LOOP    l12
 
-	MOV     byte[cor], pRETo
+	;MOV     byte[cor], pRETo
+
+	MOV AL, 0x00          ; Cor preta
+    MOV byte [cor], AL
+
 	CALL	draw_facil
 	CALL	draw_medio
 	CALL	draw_dif
