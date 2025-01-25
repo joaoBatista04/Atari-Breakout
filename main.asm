@@ -16,7 +16,27 @@ global raquete_y_1
 global raquete_y2_1
 global raquete_y_2
 global raquete_y2_2
+global branco_intenso
+global	pRETo
+global verde
+global vermelho
+global amarelo		
+global branco_intenso	
+global mens_intro
+global mens_facil		
+global mens_medio		
+global mens_dificil	
+global facil_line_pos	
+global facil_col_pos	
+global medio_line_pos	
+global medio_col_pos	
+global dif_line_pos	
+global dif_col_pos		
+global select_arrow	
+global arrow_col_pos
+global arrow_line_pos
 
+;extern intro_menu
 extern DirXY
 extern plot_xy
 extern line
@@ -50,12 +70,15 @@ segment code
     	INT     	10h
 		
 
+;CALL intro_menu
+
+
 intro_menu:
-	; Escrever a mensagem (Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d))
-	MOV     CX, 65              ; Número de caracteres
+	; Escrever a mensagem (Selecione a dificuldade do jogo:)
+	MOV     CX, 32              ; Número de caracteres
 	MOV     BX, 0
-	MOV     DH, 14              ; Linha 0-29
-	MOV     DL, 7               ; Coluna 0-79
+	MOV     DH, 12              ; Linha 0-29
+	MOV     DL, 24               ; Coluna 0-79
 	MOV     byte[cor], branco_intenso
 l3:
 	CALL	cursor
@@ -65,45 +88,282 @@ l3:
 	INC     DL                  ; Avança a coluna
 	LOOP    l3
 
+	MOV     byte[cor], verde
+	CALL draw_facil
+
+	MOV     byte[cor], branco_intenso
+	CALL draw_medio
+	CALL draw_dif
+	CALL draw_facil_arrow
+	JMP wait_input
+
+draw_facil:
+	; Escrever a mensagem (Fácil)
+	MOV     CX, 5              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [facil_line_pos]              ; Linha 0-29
+	MOV     DL, [facil_col_pos]               ; Coluna 0-79
+	
+l9:
+	CALL	cursor
+	MOV     AL, [BX + mens_facil]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l9
+
+	RET
+
+draw_medio:
+	; Escrever a mensagem (Médio)
+	MOV     CX, 5              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [medio_line_pos]              ; Linha 0-29
+	MOV     DL, [medio_col_pos]               ; Coluna 0-79
+l10:
+	CALL	cursor
+	MOV     AL, [BX + mens_medio]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l10
+
+	RET
+
+draw_dif:
+	; Escrever a mensagem (Difícil)
+	MOV     CX, 7              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [dif_line_pos]              ; Linha 0-29
+	MOV     DL, [dif_col_pos]               ; Coluna 0-79
+l11:
+	CALL	cursor
+	MOV     AL, [BX + mens_dificil]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l11
+
+	RET
+
+draw_facil_arrow:
+
+	; Escrever a seta seletora (>)
+	MOV     CX, 1              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [facil_line_pos]              ; Linha 0-29
+	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
+	MOV     byte[cor], verde
+
+l20:
+	CALL	cursor
+	MOV     AL, [BX + select_arrow]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l20
+
+	RET
+
+draw_medio_arrow:
+
+	; Escrever a seta seletora (>)
+	MOV     CX, 1              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [medio_line_pos]              ; Linha 0-29
+	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
+	MOV     byte[cor], amarelo
+l21:
+	CALL	cursor
+	MOV     AL, [BX + select_arrow]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l21
+
+	RET
+
+draw_dif_arrow:
+
+	; Escrever a seta seletora (>)
+	MOV     CX, 1              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [dif_line_pos]              ; Linha 0-29
+	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
+	MOV     byte[cor], vermelho
+l22:
+	CALL	cursor
+	MOV     AL, [BX + select_arrow]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l22
+
+	RET
+;----------------- fim do desenho do intro menu ----------------------
+
+
+erase_arrow:
+	; Escrever a seta seletora (>)
+	MOV     CX, 1              ; Número de caracteres
+	MOV     BX, 0
+	MOV     DH, [arrow_line_pos]              ; Linha 0-29
+	MOV     DL, [arrow_col_pos]               ; Coluna 0-79
+	MOV     byte[cor], pRETo
+l17:
+	CALL	cursor
+	MOV     AL, [BX + select_arrow]
+	CALL	caracter
+	INC     BX                  ; Próximo caractere
+	INC     DL                  ; Avança a coluna
+	LOOP    l17
+
+	RET
 wait_input:
 	; Esperar entrada do usuário
 	MOV     AH, 08h
 	INT     21h
-	CMP     AL, 'f'
-	JE      vel_f
-	CMP     AL, 'm'
-	JE      vel_m
-	CMP     AL, 'd'
-	JE      vel_d
+	CMP     AL, 72
+	JE		pos_up_verification
+	CMP     AL, 80
+	JE		pos_down_verification
+	CMP     AL, 13
+	JE		pos_enter_verification
 	JMP     wait_input          ; Volta para aguardar entrada válida
 
-vel_f:
+pos_enter_verification:
+
+	CMP 	word[arrow_line_pos], 14
+	JE		select_facil
+	CMP		word[arrow_line_pos], 16
+	JE		select_medio
+	CMP		word[arrow_line_pos], 18
+	JE		select_dificil
+	JMP 	wait_input
+
+select_facil:
 	MOV     word[vel], 15        ; Configurar velocidade para "fácil"
 	JMP 	clear_intro_screen
 
-vel_m:
+select_medio:
 	MOV     word[vel], 10       ; Configurar velocidade para "médio"
 	JMP 	clear_intro_screen
 
-vel_d:
+select_dificil:
 	MOV     word[vel], 5       ; Configurar velocidade para "difícil"
 	JMP 	clear_intro_screen
+	
+pos_up_verification:
+	CALL 	erase_arrow
+
+	CMP		word[arrow_line_pos], 16	;medio
+	JE		move_arrow_medio_to_facil
+	CMP		word[arrow_line_pos], 18	;dificil
+	JE		move_arrow_dif_to_medio
+
+	MOV     byte[cor], verde
+	CALL	draw_facil_arrow
+	JMP 	wait_input
+
+pos_down_verification:
+	CALL 	erase_arrow
+
+	CMP 	word[arrow_line_pos], 14	;facil
+	JE		move_arrow_facil_to_medio
+	CMP		word[arrow_line_pos], 16	;medio
+	JE		move_arrow_medio_to_dif
+	
+	MOV     byte[cor], vermelho
+	CALL 	draw_dif_arrow
+	JMP 	wait_input
+
+
+move_arrow_medio_to_facil:
+
+	MOV     byte[cor], branco_intenso
+	CALL	draw_medio
+
+	JMP move_arrow_facil
+
+move_arrow_dif_to_medio:
+
+	MOV     byte[cor], branco_intenso
+	CALL	draw_dif
+
+	JMP move_arrow_medio
+
+move_arrow_facil_to_medio:
+
+	MOV     byte[cor], branco_intenso
+	CALL	draw_facil
+
+	JMP move_arrow_medio
+
+move_arrow_medio_to_dif:
+
+	MOV     byte[cor], branco_intenso
+	CALL	draw_medio
+
+	JMP move_arrow_dif
+
+
+move_arrow_facil:
+	
+	MOV word[arrow_line_pos], 14
+
+	MOV     byte[cor], verde
+	CALL 	draw_facil_arrow
+
+	MOV     byte[cor], verde
+	CALL	draw_facil
+
+	JMP wait_input
+
+move_arrow_medio:
+	
+	MOV word[arrow_line_pos], 16
+
+	MOV     byte[cor], amarelo
+	CALL draw_medio_arrow
+
+	MOV     byte[cor], amarelo
+	CALL	draw_medio
+
+	JMP wait_input
+
+move_arrow_dif:
+	
+	MOV word[arrow_line_pos], 18
+	
+	MOV     byte[cor], vermelho
+	CALL draw_dif_arrow
+
+	MOV     byte[cor], vermelho
+	CALL	draw_dif
+	JMP wait_input
+
 
 clear_intro_screen:
-	; apagar a mensagem (Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d))
-	MOV     CX, 65              ; Número de caracteres
+	; apagar a mensagem (Selecione a dificuldade do jogo:)
+	MOV     CX, 32              ; Número de caracteres
 	MOV     BX, 0
-	MOV     DH, 14              ; Linha 0-29
-	MOV     DL, 7               ; Coluna 0-79
+	MOV     DH, 12              ; Linha 0-29
+	MOV     DL, 24               ; Coluna 0-79
 	MOV     byte[cor], pRETo
-l1:
+
+l12:
 	CALL	cursor
 	MOV     AL, [BX + mens_intro]
 	CALL	caracter
 	INC     BX                  ; Próximo caractere
 	INC     DL                  ; Avança a coluna
-	LOOP    l1
+	LOOP    l12
 
+	MOV     byte[cor], pRETo
+	CALL	draw_facil
+	CALL	draw_medio
+	CALL	draw_dif
+	CALL 	erase_arrow
 
 ;Desenhar Retas
 draw_lines:
@@ -127,140 +387,71 @@ draw_lines:
 		MOV		AX, 479
 		PUSH	AX
 		CALL	line
+		
+		JMP 	walls
 
-		MOV		byte[cor], azul
-		MOV		word[obstacle_x], 5
+next_rect:
+		MOV		AX, word[obstacle_y]
+		ADD		AX, 96
+		MOV		word[obstacle_y], AX
+
+		MOV		AX, word[obstacle_y2]
+		ADD		AX, 96
+		MOV		word[obstacle_y2], AX
+		RET
+
+walls:	MOV		word[obstacle_x], 5
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
-		
-		
-walls:	CALL	full_rectangle
-		
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
-
-		MOV		byte[cor], azul_claro
-
-		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
-		
-		MOV		byte[cor], verde
-
-		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
-
-		MOV		byte[cor], amarelo
-
-		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
-
-		
-		MOV		byte[cor], vermelho
-
-		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
-
-
 
 		MOV		byte[cor], azul
-		MOV		word[obstacle_x], 605
+		CALL	full_rectangle	
+		CALL 	next_rect
+
+		MOV		byte[cor], azul_claro
+		CALL	full_rectangle
+		CALL	next_rect
+		
+		MOV		byte[cor], verde
+		CALL	full_rectangle
+		CALL	next_rect
+
+		MOV		byte[cor], amarelo
+		CALL	full_rectangle
+		CALL	next_rect
+
+		MOV		byte[cor], vermelho
+		CALL	full_rectangle
+		CALL	next_rect
+
+		
+		
+walls2:	MOV		word[obstacle_x], 605
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
-		
-		
-walls2:	CALL	full_rectangle
-		
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
 
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		MOV		byte[cor], azul
+		CALL	full_rectangle
+		CALL	next_rect
 
 		MOV		byte[cor], azul_claro
-
 		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		CALL	next_rect
 		
 		MOV		byte[cor], verde
-
 		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		CALL	next_rect
 
 		MOV		byte[cor], amarelo
-
 		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		CALL	next_rect
 
 		
 		MOV		byte[cor], vermelho
-
 		CALL	full_rectangle
-
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
-
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		CALL	next_rect
 
 inicializa_raquetes:
 		MOV		byte[cor], magenta
@@ -285,8 +476,6 @@ off:	MOV    	AH,08h
 		CMP 	AL, 'p'
 		JE 		paused_menu
 		JMP 	check_raquete
-
-
 
 exit_menu:
 	;Escrever uma mensagem
@@ -371,11 +560,12 @@ l7:
 	
     	LOOP    l7
 
+wait_paused_menu:
 		MOV    	AH,08h
 		INT     21h
 		CMP		AL, 'p'
-		JE		quit_pause	
-		JMP		wait_input
+		JNE		wait_paused_menu	
+		JMP		quit_pause
 
 quit_pause:
 	;Escrever uma mensagem
@@ -481,8 +671,6 @@ raquete_draw:
 		CALL	raquete_2Fn
 
 		JMP		print_ball
-
-
 draw:
 		MOV		byte[cor], verde
 		MOV		AX, word[posX]
@@ -523,12 +711,30 @@ linha   		dw  	0
 coluna  		dw  	0
 deltAX			dw		0
 deltay			dw		0	
+
 mens    		db  	'Deseja mesmo sair? s/n'
 mens_intro		db 		'Selecione a dificuldade do jogo: facil(f) | medio(m) | dificil(d)'
+
+mens_facil		db 		'Facil'
+mens_medio		db		'Medio'
+mens_dificil	db		'Dificil'
+
+facil_line_pos	dw		14
+facil_col_pos	dw		26
+medio_line_pos	dw		16
+medio_col_pos	dw		26
+dif_line_pos	dw		18
+dif_col_pos		dw		26
+
+select_arrow	db		'>'
+
 obstacle_y		dw		5
 obstacle_y2		dw		86
 obstacle_x		dw		5
 obstacle_x2		dw		30
+
+arrow_line_pos	dw		14
+arrow_col_pos	dw		24
 
 raquete_y_1		dw		5
 raquete_y2_1	dw		86
