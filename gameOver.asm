@@ -18,6 +18,8 @@ extern cursor
 extern caracter
 extern vel
 extern modo_anterior
+extern pressed_keys
+extern exit
 
 game_over:
 
@@ -45,6 +47,14 @@ game_over:
         CALL    write_over
         CALL    wait_500ms
 
+        MOV     AH, [pressed_keys+5]
+        CMP     AH, 49
+        JE      ret_call
+
+        MOV     AH, [pressed_keys+6]
+        CMP     AH, 49
+        JE      exit_call
+    loop_colors2:
         ; Segunda cor (amarelo)
         MOV     AL, 0x0E           ; Cor amarela
         MOV byte [cor], AL
@@ -52,6 +62,14 @@ game_over:
         CALL    write_over
         CALL    wait_500ms
 
+        MOV     AH, [pressed_keys+5]
+        CMP     AH, 49
+        JE      ret_call
+
+        MOV     AH, [pressed_keys+6]
+        CMP     AH, 49
+        JE      exit_call
+    loop_colors3:
         ; Terceira cor (verde)
         MOV     AL, 0x02           ; Cor verde
         MOV byte [cor], AL
@@ -59,6 +77,14 @@ game_over:
         CALL    write_over
         CALL    wait_500ms
 
+        MOV     AH, [pressed_keys+5]
+        CMP     AH, 49
+        JE      ret_call
+
+        MOV     AH, [pressed_keys+6]
+        CMP     AH, 49
+        JE      exit_call
+    loop_colors4:
         ; Quarta cor (vermelho)
         MOV     AL, 0x04           ; Cor vermelha
         MOV byte [cor], AL
@@ -66,19 +92,43 @@ game_over:
         CALL    write_over
         CALL    wait_500ms
 
-        ; Recomeçar o loop para mudar novamente as cores
-        JMP     loop_colors
+        MOV     AH, [pressed_keys+5]
+        CMP     AH, 49
+        JE      ret_call
 
-        ;FALTA ADICIONAR A VERIFICAÇÃO SE DIGITOU Y/N (VOU AGUARDAR O TECBUF (EM DESENVOLVIMENTO) PARA IMPLEMENTAR)
+        MOV     AH, [pressed_keys+6]
+        CMP     AH, 49
+        JE      exit_call
+
+        JMP     loop_colors   
+
+exit_call:
+        CALL    exit
+
+ret_call:
+        ;Apaga a mensagem (Gostaria de iniciar uma nova partida? y/n)
+        MOV     CX, 41              ; Número de caracteres
+        MOV     BX, 0
+        MOV     DH, 15              ; Linha 0-29
+        MOV     DL, 20               ; Coluna 0-79
+
+        MOV     AL, 0x00          ;Cor preta
+        MOV     byte [cor], AL
+    apaga_msg:
+        CALL	cursor
+        MOV     AL, [BX + mens_new]
+        CALL	caracter
+        INC     BX                  ; Próximo caractere
+        INC     DL                  ; Avança a coluna
+        LOOP    apaga_msg
+
+        ;Apaga texto de game over
+        MOV     AL, 0x00           ; Cor preta
+        MOV     byte [cor], AL
+        CALL    write_game
+        CALL    write_over
+
         RET
-
-
-exit:
-        MOV  	AH,0   				; set video mode
-	    MOV  	AL,[modo_anterior] 	; modo anterior
-	    INT  	10h
-		MOV     AX,4C00h
-		INT     21h
 
 write_game:
     ; Escrever a mensagem (GAME)
@@ -117,6 +167,6 @@ write_over:
 wait_500ms:
     MOV     AX, 0x8600         ; Função para esperar
     MOV     CX, 0x0000         ; 0 milissegundos
-    MOV     DX,  0xFA00         ; ~500 milissegundos
+    MOV     DX,  0xDE00         ; ~500 milissegundos
     INT     15h
     RET

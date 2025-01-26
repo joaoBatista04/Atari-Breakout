@@ -1,7 +1,3 @@
-; versão de 10/05/2007
-; corrigido erro de arredondamento na rotina line.
-; circle e full_circle DISPonibilizados por JEfferson Moro em 10/2009
-; 
 global modo_anterior
 global cor
 global vel
@@ -39,6 +35,8 @@ global arrow_col_pos
 global arrow_line_pos
 global mens_game
 global mens_over
+global pressed_keys
+global exit
 
 extern game_over
 extern intro_menu
@@ -54,6 +52,7 @@ extern raquete_1Fn
 extern raquete_2Fn
 extern delay
 extern full_rectangle
+extern debounce
 
 segment code
 ..start:
@@ -76,6 +75,19 @@ segment code
 		
 ;Menu inicial do jogo
 		CALL intro_menu
+
+;Instalação do tratamento para iterrupcao de teclado (INT 9h)
+		CLI
+        MOV 	AX, 0
+        MOV 	ES, AX
+        MOV 	AX, [ES:4 * 9 + 2]
+        MOV 	[DS:int9_original_segment], AX
+        MOV 	AX, [ES:4 * 9]
+        MOV 	[ds:int9_original_offset], AX
+        MOV 	AX, CS
+        MOV 	word[ES:4 * 9 + 2], AX
+        MOV 	word[ES:4 * 9], key_handler
+        STI
 
 ;Desenhar Retas
 draw_lines:
@@ -112,6 +124,7 @@ next_rect:
 		MOV		word[obstacle_y2], AX
 		RET
 
+;Desenhar barreiras coloridas no lado direito
 walls:	MOV		word[obstacle_x], 5
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
@@ -136,9 +149,8 @@ walls:	MOV		word[obstacle_x], 5
 		MOV		byte[cor], vermelho
 		CALL	full_rectangle
 		CALL	next_rect
-
-		
-		
+	
+;Desenhar barreiras coloridas no lado esquerdo		
 walls2:	MOV		word[obstacle_x], 605
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
@@ -165,86 +177,44 @@ walls2:	MOV		word[obstacle_x], 605
 		CALL	full_rectangle
 		CALL	next_rect
 
+;Inicializar as raquetes
 inicializa_raquetes:
 		MOV		byte[cor], magenta
 		CALL	raquete_1Fn
 
 		MOV		byte[cor], azul_claro
 		CALL	raquete_2Fn
-		JMP ver_off
+        JMP     print_ball
 
-jump_to_game_over:
-	CALL game_over
-	JMP	check_raquete
+;===================== LOOP PRINCIPAL
+verify_pause_menu:
+        MOV     AH, [pressed_keys+4]
+        CMP     AH, 49
+        JE      call_pause_menu
+        JMP     verify_game_over
 
-ver_off:
-		MOV		AH, 0Bh
-		INT 	21h
-		CMP		AL, 0
+call_pause_menu:
+        CALL    paused_menu
 
-		JNE		off
-		JMP		print_ball
+verify_game_over:
+        MOV     AH, [pressed_keys+8]
+        CMP     AH, 49
+        JE      call_game_over
+        JMP     verify_quit_menu
 
-off:	MOV    	AH,08h
-		INT     21h
-		CMP		AL, 'q'
-		JE		exit_menu
-		CMP 	AL, 'p'
-		JE 		paused_menu
-		CMP		AL, 'o'
-		JE		jump_to_game_over
-		JMP 	check_raquete
+call_game_over:
+        CALL    game_over
+        JMP     draw_lines
 
-exit_menu:
-	;Escrever uma mensagem
-    	MOV     CX,22				;número de caracteres
-    	MOV     BX,0
-    	MOV     DH,14				;linha 0-29
-    	MOV     DL,30				;coluna 0-79
-		MOV		byte[cor],branco_intenso
-l4:
-		CALL	cursor
-    	MOV     AL,[BX+mens_exit]
-		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
-	
-    	LOOP    l4
+    
+verify_quit_menu:
+        MOV     AH, [pressed_keys+7]
+        CMP     AH, 49
+        JE      call_quit_menu
+        JMP     print_ball
 
-wait_exit_input:
-		; Esperar entrada do usuário
-		MOV     AH, 08h
-		INT     21h
-		CMP     AL, 'y'
-		JE      exit
-		CMP     AL, 'n'
-		JE      clear_exit_screen
-		JMP     wait_exit_input          ; Volta para aguardar entrada válida
-
-clear_exit_screen:
-	;apaga uma mensagem
-    	MOV     CX,22				;número de caracteres
-    	MOV     BX,0
-    	MOV     DH,14				;linha 0-29
-    	MOV     DL,30				;coluna 0-79
-		MOV		byte[cor],pRETo
-l5:
-		CALL	cursor
-    	MOV     AL,[BX+mens_exit]
-		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
-	
-    	LOOP    l5
-
-		JMP		print_ball
-
-exit:	
-		MOV  	AH,0   				; set video mode
-	    MOV  	AL,[modo_anterior] 	; modo anterior
-	    INT  	10h
-		MOV     AX,4C00h
-		INT     21h
+call_quit_menu:
+        CALL    exit_menu
 
 print_ball:
 		MOV		byte[cor], pRETo
@@ -258,104 +228,86 @@ print_ball:
 		CALL	DirXY
 		JMP		draw
 
-paused_menu:
-		;Escrever uma mensagem
-    	MOV     CX,7				;número de caracteres
-    	MOV     BX,0
-    	MOV     DH,14 			;linha 0-29
-    	MOV     DL,36				;coluna 0-79
-		MOV		byte[cor],branco_intenso
+draw:
+		MOV		byte[cor], verde
+		MOV		AX, word[posX]
+		PUSH 	AX
+		MOV		AX, word[posY]
+		PUSH	AX
+		MOV		AX, 10
+		PUSH 	AX
+		CALL	circle
 
-l7:
-		CALL	cursor
-    	MOV     AL,[BX+paused_mens]
-		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
-    	LOOP    l7
-
-wait_paused_menu:
-		MOV    	AH,08h
-		INT     21h
-		CMP		AL, 'p'
-		JNE		wait_paused_menu	
-		JMP		quit_pause
-
-quit_pause:
-	;Escrever uma mensagem
-    	MOV     CX,7				;número de caracteres
-    	MOV     BX,0
-    	MOV     DH,14				;linha 0-29
-    	MOV     DL,36				;coluna 0-79
-		MOV		byte[cor],pRETo
-
-l8:
-		CALL	cursor
-    	MOV     AL,[BX+paused_mens]
-		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
-    	LOOP    l8
-
-		JMP check_raquete
+		CALL	delay
 
 check_raquete:
-		CMP		AL, 'w'
-		JE		verify_upper_bound
-		CMP		AL, 's'
-		JE		verify_lower_bound
-		CMP		AL, 72 ; Código de scan da seta para cima
-		JE		verify_upper_bound_2
-		CMP		AL, 80 ; Código de scan da seta para baixo
-		JE		verify_lower_bound_2
-
-		JMP		print_ball
+		MOV     AH, [pressed_keys]
+        CMP     AH, 49
+        JNE     .check_raquete_2
+        CALL    verify_upper_bound_2 
+.check_raquete_2:
+        MOV     AH, [pressed_keys+1]  
+        CMP     AH, 49
+        JNE     .check_raquete_3
+        CALL    verify_lower_bound_2
+.check_raquete_3:
+        MOV     AH, [pressed_keys+2]  
+        CMP     AH, 49
+        JNE     .check_raquete_4
+        CALL    verify_upper_bound
+.check_raquete_4:
+        MOV     AH, [pressed_keys+3]  
+        CMP     AH, 49
+        JNE     .check_raquete_5
+        CALL    verify_lower_bound
+.check_raquete_5:
+		JMP		verify_pause_menu
 
 verify_upper_bound:		
 		MOV		BX, word[raquete_y2_1]
 		CMP		BX, 470
 		JL		raquete_up
-		JMP		print_ball
+		RET
 
 verify_upper_bound_2:		
 		MOV		BX, word[raquete_y2_2]
 		CMP		BX, 470
 		JL		raquete_up_2
-		JMP		print_ball
+		RET
 
 verify_lower_bound:		
 		MOV		BX, word[raquete_y_1]
 		CMP		BX, 5
 		JG		raquete_down
-		JMP		print_ball
+		RET
 
 verify_lower_bound_2:		
 		MOV		BX, word[raquete_y_2]
 		CMP		BX, 5
 		JG		raquete_down_2
-		JMP		print_ball
+		RET
 
 raquete_up:
 		MOV 	AX, word[raquete_1]
-		ADD		AX, 10
+		ADD		AX, 5
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
 
 raquete_up_2:
 		MOV 	AX, word[raquete_2]
-		ADD		AX, 10
+		ADD		AX, 5
 		MOV 	word[raquete_2], AX
 		JMP		raquete_draw
 
 raquete_down:
 		MOV 	AX, word[raquete_1]
-		SUB		AX, 10
+		SUB		AX, 5
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
 
 raquete_down_2:
 		MOV 	AX, word[raquete_2]
-		SUB		AX, 10
+		SUB		AX, 5
 		MOV 	word[raquete_2], AX
 		JMP		raquete_draw
 
@@ -380,20 +332,278 @@ raquete_draw:
 		MOV		byte[cor], azul_claro
 		CALL	raquete_2Fn
 
-		JMP		print_ball
-draw:
-		MOV		byte[cor], verde
-		MOV		AX, word[posX]
-		PUSH 	AX
-		MOV		AX, word[posY]
-		PUSH	AX
-		MOV		AX, 10
-		PUSH 	AX
-		CALL	circle
+		RET
 
-		CALL	delay
+;===================== LOOP PRINCIPAL
 
-		JMP		ver_off
+;===================== PAUSE MENU
+paused_menu:
+		;Escrever uma mensagem
+    	MOV     CX,7				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14 			;linha 0-29
+    	MOV     DL,36				;coluna 0-79
+		MOV		byte[cor],branco_intenso
+
+l7:
+		CALL	cursor
+    	MOV     AL,[BX+paused_mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+    	LOOP    l7
+
+        CALL    debounce
+
+wait_paused_menu:
+        MOV     AH, [pressed_keys+4]
+		CMP		AH, 49
+		JNE		wait_paused_menu	
+		JMP		quit_pause
+
+quit_pause:
+	;Escrever uma mensagem
+        MOV     CX,7				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,36				;coluna 0-79
+		MOV		byte[cor],pRETo
+
+l8:
+		CALL	cursor
+    	MOV     AL,[BX+paused_mens]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+    	LOOP    l8
+
+        CALL    debounce
+
+        RET
+
+;===================== QUIT MENU
+exit_menu:
+	;Escrever uma mensagem
+    	MOV     CX,22				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,30				;coluna 0-79
+		MOV		byte[cor],branco_intenso
+l4:
+		CALL	cursor
+    	MOV     AL,[BX+mens_exit]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l4
+
+        CALL    debounce
+
+wait_exit_input:
+		; Esperar entrada do usuário
+		MOV     AH, [pressed_keys+5]
+        CMP     AH, 49
+		JE      exit
+		MOV     AH, [pressed_keys+6]
+        CMP     AH, 49
+		JE      clear_exit_screen
+		JMP     wait_exit_input          ; Volta para aguardar entrada válida
+
+clear_exit_screen:
+	;apaga uma mensagem
+    	MOV     CX,22				;número de caracteres
+    	MOV     BX,0
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,30				;coluna 0-79
+		MOV		byte[cor],pRETo
+l5:
+		CALL	cursor
+    	MOV     AL,[BX+mens_exit]
+		CALL	caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
+	
+    	LOOP    l5
+
+		CALL    debounce
+
+        RET
+
+;===================== EXIT
+exit:	
+		PUSH 	ES
+		MOV 	AX, 0
+		MOV 	ES, AX
+		CLI
+		MOV 	AX, [int9_original_offset]
+		MOV 	[ES:4 * 9], AX
+		MOV 	AX, [int9_original_segment]
+		MOV 	[ES:4 * 9 + 2], AX
+		STI
+		POP 	ES
+		
+		MOV  	AH,0   				; set video mode
+	    MOV  	AL,[modo_anterior] 	; modo anterior
+	    INT  	10h
+		MOV     AX,4C00h
+		INT     21h
+
+;===================== TRATAMENTO DE INTERRUPCOES
+key_handler:
+			PUSH    ES
+			PUSH    AX
+			PUSH    BX
+			MOV     AX, ds
+			MOV     es, AX
+			IN      al, 60h
+
+			MOV     BH, AL
+			IN      AL, 061h       
+			MOV     BL, AL
+			OR      AL, 080h
+			OUT     061h, AL     
+			MOV     AL, BL
+			OUT     061h, AL 
+			MOV     AL, BH
+			
+			CMP     AL, 0e0h
+			JZ      .ignore
+			MOV     AH, 0
+			MOV     BX, AX
+			and     BL, 01111111b
+			and     AL, 10000000b
+			CMP     AL, 10000000b
+			JZ      .key_released_jmp
+		.key_pressed:
+			CMP     BL, 72
+            JE      .set_key_1
+            CMP     BL, 80
+            JE      .set_key_2
+            CMP     BL, 17
+            JE      .set_key_3
+            CMP     BL, 31
+            JE      .set_key_4
+            CMP     BL, 25
+            JE      .set_key_5
+            CMP     BL, 21
+            JE      .set_key_6
+            CMP     BL, 49
+            JE      .set_key_7
+            CMP     BL, 16
+            JE      .set_key_8
+            CMP     BL, 24
+            JE      .set_key_9
+			JMP     .ignore
+
+        .ignore:
+            MOV     AL, 20h
+			OUT     20h, AL
+			POP     BX
+			POP     AX
+			POP     ES
+			IRET 
+
+        .key_released_jmp:
+            JMP     .key_released
+
+        .set_key_1:
+            MOV     byte[pressed_keys], 49
+            JMP     .ignore
+        .set_key_2:
+            MOV     byte[pressed_keys+1], 49
+            JMP     .ignore
+        .set_key_3:
+            MOV     byte[pressed_keys+2], 49
+            JMP     .ignore
+        .set_key_4:
+            MOV     byte[pressed_keys+3], 49
+            JMP     .ignore
+        .set_key_5:
+            MOV     byte[pressed_keys+4], 49
+            JMP     .ignore
+        .set_key_6:
+            MOV     byte[pressed_keys+5], 49
+            JMP     .ignore
+        .set_key_7:
+            MOV     byte[pressed_keys+6], 49
+            JMP     .ignore
+        .set_key_8:
+            MOV     byte[pressed_keys+7], 49
+            JMP     .ignore
+        .set_key_9:
+            MOV     byte[pressed_keys+8], 49
+            JMP     .ignore
+
+		.key_released:
+			CMP     BL, 72
+            JE      .unset_key_1
+            CMP     BL, 80
+            JE      .unset_key_2
+            CMP     BL, 17
+            JE      .unset_key_3
+            CMP     BL, 31
+            JE      .unset_key_4
+            CMP     BL, 25
+            JE      .unset_key_5
+            CMP     BL, 21
+            JE      .unset_key_6
+            CMP     BL, 49
+            JE      .unset_key_7
+            CMP     BL, 16
+            JE      .unset_key_8
+            CMP     BL, 24
+            JE      .unset_key_9
+            JMP     .ignore2
+
+        .ignore2:
+            MOV     AL, 20h
+			OUT     20h, AL
+			POP     BX
+			POP     AX
+			POP     ES
+			IRET 
+
+        .unset_key_1:
+            MOV     byte[pressed_keys], 48
+            JMP     .ignore2
+        .unset_key_2:
+            MOV     byte[pressed_keys+1], 48
+            JMP     .ignore2
+        .unset_key_3:
+            MOV     byte[pressed_keys+2], 48
+            JMP     .ignore2
+        .unset_key_4:
+            MOV     byte[pressed_keys+3], 48
+            JMP     .ignore2
+        .unset_key_5:
+            MOV     byte[pressed_keys+4], 48
+            JMP     .ignore2
+        .unset_key_6:
+            MOV     byte[pressed_keys+5], 48
+            JMP     .ignore2
+        .unset_key_7:
+            MOV     byte[pressed_keys+6], 48
+            JMP     .ignore2
+        .unset_key_8:
+            MOV     byte[pressed_keys+7], 48
+            JMP     .ignore2
+        .unset_key_9:
+            MOV     byte[pressed_keys+8], 48
+            JMP     .ignore2
+disable_int9:
+            PUSH    ES
+			MOV     AX, 0
+			MOV     ES, AX
+			CLI
+			MOV     AX, [int9_original_offset]
+			MOV     [ES:4 * 9], AX
+			MOV     AX, [int9_original_segment]
+			MOV     [ES:4 * 9 + 2], AX
+			STI
+			POP     ES
+			RET
+
 ;*******************************************************************
 segment data
 
@@ -465,6 +675,11 @@ raquete_1		dw		0
 raquete_2		dw		0
 
 paused_mens		db 		'Pausado'
+
+int9_original_offset	dw 0
+int9_original_segment	dw 0
+; UP DOWN W S P Y N Q O
+pressed_keys            db '000000000'
 
 ;*************************************************************************
 segment stack stack

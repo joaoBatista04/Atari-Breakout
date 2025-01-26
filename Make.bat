@@ -1,4 +1,4 @@
-call nasm main 
+call nasm main
 call nasm dirxy
 call nasm line 
 call nasm fcircle 
