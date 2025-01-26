@@ -317,7 +317,7 @@ raquete_draw:
 		CALL	raquete_2Fn
 		
 		MOV		BX, [raquete_1]
-		ADD		BX, 5
+		ADD		BX, 220
 		MOV		word[raquete_y_1], BX
 		ADD		BX, 81
 		MOV		word[raquete_y2_1], BX	
@@ -325,7 +325,7 @@ raquete_draw:
 		CALL	raquete_1Fn
 
 		MOV		BX, [raquete_2]
-		ADD		BX, 5
+		ADD		BX, 220
 		MOV		word[raquete_y_2], BX
 		ADD		BX, 81
 		MOV		word[raquete_y2_2], BX	
@@ -659,11 +659,11 @@ obstacle_x2		dw		30
 arrow_line_pos	dw		14
 arrow_col_pos	dw		24
 
-raquete_y_1		dw		5
-raquete_y2_1	dw		86
+raquete_y_1		dw		220
+raquete_y2_1	dw		301
 
-raquete_y_2		dw		5
-raquete_y2_2	dw		86
+raquete_y_2		dw		220
+raquete_y2_2	dw		301
 
 vel				dw		10
 posX			dw		320
