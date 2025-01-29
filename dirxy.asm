@@ -139,7 +139,7 @@ DirY:	MOV		AX, word[posY]
 		JL		raquete_1_bounds
 
 		MOV		AX, word[posX]
-		CMP		AX, 554
+		CMP		AX, 556
 		JG		raquete_2_bounds
 
 		JMP		inc_dec_y

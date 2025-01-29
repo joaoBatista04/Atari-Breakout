@@ -13,7 +13,7 @@ del1:
 		RET
 
 debounce:
-		MOV		CX, 20
+		MOV		CX, 80
 	.debounce_loop:
 		PUSH	CX
 		CALL	delay
