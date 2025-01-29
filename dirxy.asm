@@ -58,9 +58,18 @@ game_over_call:
 		MOV		AH, 49
 		RET
 
+verify_right_walls:
+		CALL	verifyRight
+		JMP		inc_dec_x
+
+verify_left_walls:
+		CALL	verifyLeft
+		JMP		inc_dec_x
+
 verify_raquete_1:
 		MOV		AX, word[posY]
 		MOV		BX, word[raquete_y_1]
+		SUB		BX, 10
 		CMP		AX, BX
 		JG		verify_raquete_1_2
 		JMP		inc_dec_x
@@ -68,6 +77,7 @@ verify_raquete_1:
 verify_raquete_1_2:
 		MOV		AX, word[posY]
 		MOV		BX, word[raquete_y2_1]
+		ADD		BX, 10
 		CMP		AX, BX
 		JB		direita
 		JMP		inc_dec_x
@@ -75,6 +85,7 @@ verify_raquete_1_2:
 verify_raquete_2:
 		MOV		AX, word[posY]
 		MOV		BX, word[raquete_y_2]
+		SUB		BX, 10
 		CMP		AX, BX
 		JG		verify_raquete_2_2
 		JMP		inc_dec_x
@@ -82,16 +93,9 @@ verify_raquete_2:
 verify_raquete_2_2:
 		MOV		AX, word[posY]
 		MOV		BX, word[raquete_y2_2]
+		ADD		BX, 10
 		CMP		AX, BX
 		JB		esquerda
-		JMP		inc_dec_x
-
-verify_right_walls:
-		CALL	verifyRight
-		JMP		inc_dec_x
-
-verify_left_walls:
-		CALL	verifyLeft
 		JMP		inc_dec_x
 
 esquerda:
@@ -152,6 +156,15 @@ teto:
 		JMP		inc_dec_y
 
 raquete_1_bounds:
+		MOV		AX, word[posX]
+		CMP		AX, 41
+		JL		.verify_block_1
+		JMP		.segue_1
+
+.verify_block_1:
+		CALL	verifyRight
+
+.segue_1:
 		MOV		AX, word[posY]
 		ADD		AX, 11
 		CMP		AX, word[raquete_y_1]
@@ -165,6 +178,15 @@ raquete_1_bounds:
 		JMP 	inc_dec_y
 
 raquete_2_bounds:
+		MOV		AX, word[posX]
+		CMP		AX, 594
+		JG		.verify_block_2
+		JMP		.segue_2
+
+.verify_block_2:
+		CALL	verifyLeft
+
+.segue_2:
 		MOV		AX, word[posY]
 		ADD		AX, 11
 		CMP		AX, word[raquete_y_2]
