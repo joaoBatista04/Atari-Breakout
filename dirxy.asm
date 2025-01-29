@@ -9,18 +9,30 @@ extern raquete_y_2
 extern raquete_y2_1
 extern raquete_y2_2
 
+extern obstacle_x
+extern obstacle_x2
+extern obstacle_y
+extern obstacle_y2
+extern cor
+extern full_rectangle
+extern on_obstacles_right
+extern game_over
+extern verifyRight
+extern verifyLeft
+
 DirXY:	JMP		DirX
 
-DirX:	MOV		AX, word[posX]
+DirX:	
+		MOV		AX, word[posX]
 		MOV		BX, 594
 		CMP		AX, BX
-		JE		esquerda
+		JE		verify_left_walls
 
 		MOV		AX, word[posX]
 		MOV		BX, 41
 		CMP		AX, BX
-		JE		direita
-
+		JE		verify_right_walls
+		
 		MOV		AX, word[posX]
 		MOV		BX, 564
 		CMP		AX, BX
@@ -31,8 +43,20 @@ DirX:	MOV		AX, word[posX]
 		CMP		AX, BX
 		JE		verify_raquete_1
 
+		MOV		AX, word[posX]
+		CMP		AX, 4
+		JBE		game_over_call
+
+		MOV		AX, word[posX]
+		CMP		AX, 630
+		JGE		game_over_call
+
 		JNE		inc_dec_x
 
+game_over_call:
+		CALL	game_over
+		MOV		AH, 49
+		RET
 
 verify_raquete_1:
 		MOV		AX, word[posY]
@@ -60,6 +84,14 @@ verify_raquete_2_2:
 		MOV		BX, word[raquete_y2_2]
 		CMP		AX, BX
 		JB		esquerda
+		JMP		inc_dec_x
+
+verify_right_walls:
+		CALL	verifyRight
+		JMP		inc_dec_x
+
+verify_left_walls:
+		CALL	verifyLeft
 		JMP		inc_dec_x
 
 esquerda:
@@ -102,13 +134,47 @@ DirY:	MOV		AX, word[posY]
 		CMP		AX, BX
 		JE		teto
 
-		JNE		inc_dec_y
+		MOV		AX, word[posX]
+		CMP		AX, 81
+		JL		raquete_1_bounds
+
+		MOV		AX, word[posX]
+		CMP		AX, 554
+		JG		raquete_2_bounds
+
+		JMP		inc_dec_y
 
 piso:
 		MOV		word[dirY], 1
 		JMP		inc_dec_y
 teto:
 		MOV		word[dirY], 0
+		JMP		inc_dec_y
+
+raquete_1_bounds:
+		MOV		AX, word[posY]
+		ADD		AX, 11
+		CMP		AX, word[raquete_y_1]
+		JE		piso
+
+		MOV		AX, word[posY]
+		SUB		AX, 11
+		CMP		AX, word[raquete_y2_1]
+		JE		teto
+
+		JMP 	inc_dec_y
+
+raquete_2_bounds:
+		MOV		AX, word[posY]
+		ADD		AX, 11
+		CMP		AX, word[raquete_y_2]
+		JE		piso
+
+		MOV		AX, word[posY]
+		SUB		AX, 11
+		CMP		AX, word[raquete_y2_2]
+		JE		teto
+
 		JMP		inc_dec_y
 
 inc_dec_y:

@@ -37,6 +37,9 @@ global mens_game
 global mens_over
 global pressed_keys
 global exit
+global on_obstacles_right
+global on_obstacles_left
+global draw_lines
 
 extern game_over
 extern intro_menu
@@ -88,6 +91,22 @@ segment code
         MOV 	word[ES:4 * 9 + 2], AX
         MOV 	word[ES:4 * 9], key_handler
         STI
+
+initialize_params:
+		MOV		word[posX], 320
+		MOV		word[posY], 240
+
+		MOV		byte[on_obstacles_right], 49
+		MOV		byte[on_obstacles_right+1], 49
+		MOV		byte[on_obstacles_right+2], 49
+		MOV		byte[on_obstacles_right+3], 49
+		MOV		byte[on_obstacles_right+4], 49
+
+		MOV		byte[on_obstacles_left], 49
+		MOV		byte[on_obstacles_left+1], 49
+		MOV		byte[on_obstacles_left+2], 49
+		MOV		byte[on_obstacles_left+3], 49
+		MOV		byte[on_obstacles_left+4], 49
 
 ;Desenhar Retas
 draw_lines:
@@ -186,6 +205,9 @@ inicializa_raquetes:
 		CALL	raquete_2Fn
         JMP     print_ball
 
+initialize_params_je:
+		JMP		initialize_params
+
 ;===================== LOOP PRINCIPAL
 verify_pause_menu:
         MOV     AH, [pressed_keys+4]
@@ -226,6 +248,8 @@ print_ball:
 		PUSH 	AX
 		CALL	circle
 		CALL	DirXY
+		CMP		AH, 49
+		JE		initialize_params_je
 		JMP		draw
 
 draw:
@@ -680,6 +704,9 @@ int9_original_offset	dw 0
 int9_original_segment	dw 0
 ; UP DOWN W S P Y N Q O
 pressed_keys            db '000000000'
+
+on_obstacles_right 		db '11111'
+on_obstacles_left 		db '11111'
 
 ;*************************************************************************
 segment stack stack

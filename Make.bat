@@ -1,6 +1,8 @@
 call nasm main
 call nasm dirxy
-call nasm line 
+call nasm line
+call nasm rwalls
+call nasm lwalls
 call nasm fcircle 
 call nasm circle 
 call nasm cursor 
@@ -12,6 +14,6 @@ call nasm raquete
 call nasm delay
 call nasm intro
 call nasm gameOver
-call freelink main dirxy line fcircle circle cursor caracter plot_xy rect raquete delay frect intro gameOver
+call freelink main dirxy line rwalls lwalls fcircle circle cursor caracter plot_xy rect raquete delay frect intro gameOver
 call del *.OBJ
 call del *.LST
