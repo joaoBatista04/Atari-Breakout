@@ -1,4 +1,5 @@
 global debounce
+global debounce_intro
 global  delay
 extern vel
 
@@ -14,6 +15,16 @@ del1:
 
 debounce:
 		MOV		CX, 80
+	.debounce_loop:
+		PUSH	CX
+		CALL	delay
+		POP		CX
+		LOOP	.debounce_loop
+		
+		RET
+
+debounce_intro:
+		MOV		CX, 35
 	.debounce_loop:
 		PUSH	CX
 		CALL	delay

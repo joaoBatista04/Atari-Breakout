@@ -17,6 +17,8 @@ extern arrow_line_pos
 extern cursor
 extern caracter
 extern vel
+extern pressed_keys
+extern debounce_intro
 
 intro_menu:
 	; Escrever a mensagem (Selecione a dificuldade do jogo:)
@@ -195,13 +197,15 @@ l17:
 	RET
 wait_input:
 	; Esperar entrada do usuário
-	MOV     AH, 08h
-	INT     21h
-	CMP     AL, 72
+	CALL	debounce_intro
+	MOV		AL, byte[pressed_keys]
+	CMP     AL, 49
 	JE		pos_up_verification
-	CMP     AL, 80
+	MOV		AL, byte[pressed_keys+1]
+	CMP     AL, 49
 	JE		pos_down_verification
-	CMP     AL, 13
+	MOV		AL, byte[pressed_keys+8]
+	CMP     AL, 49
 	JE		pos_enter_verification
 	JMP     wait_input          ; Volta para aguardar entrada válida
 

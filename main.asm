@@ -75,9 +75,6 @@ segment code
     	MOV     	AL,12h
    		MOV     	AH,0
     	INT     	10h
-		
-;Menu inicial do jogo
-		CALL intro_menu
 
 ;Instalação do tratamento para iterrupcao de teclado (INT 9h)
 		CLI
@@ -91,6 +88,9 @@ segment code
         MOV 	word[ES:4 * 9 + 2], AX
         MOV 	word[ES:4 * 9], key_handler
         STI
+
+		;Menu inicial do jogo
+		CALL intro_menu
 
 initialize_params:
 		MOV		word[posX], 320
@@ -516,7 +516,7 @@ key_handler:
             JE      .set_key_7
             CMP     BL, 16
             JE      .set_key_8
-            CMP     BL, 24
+            CMP     BL, 28
             JE      .set_key_9
 			JMP     .ignore
 
@@ -576,7 +576,7 @@ key_handler:
             JE      .unset_key_7
             CMP     BL, 16
             JE      .unset_key_8
-            CMP     BL, 24
+            CMP     BL, 28
             JE      .unset_key_9
             JMP     .ignore2
 
@@ -702,7 +702,7 @@ paused_mens		db 		'Pausado'
 
 int9_original_offset	dw 0
 int9_original_segment	dw 0
-; UP DOWN W S P Y N Q O
+; UP DOWN W S P Y N Q Enter
 pressed_keys            db '000000000'
 
 on_obstacles_right 		db '11111'
