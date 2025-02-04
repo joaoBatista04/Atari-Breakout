@@ -61,168 +61,166 @@ extern key_handler
 segment code
 ..start:
 ;Inicializa registradores
-    	MOV		AX,data
-    	MOV 	DS,AX
-    	MOV 	AX,stack
-    	MOV 	SS,AX
-    	MOV 	SP,stacktop
+    	MOV		AX,data		; Inicializa DS
+    	MOV 	DS,AX		; Inicializa DS
+    	MOV 	AX,stack	; Inicializa SS
+    	MOV 	SS,AX		; Inicializa SS
+    	MOV 	SP,stacktop	; Inicializa SP
 
 ;Salvar modo corrente de video(vendo como está o modo de video da maquina)
-        MOV  	AH,0Fh
-    	INT  	10h
-    	MOV  	[modo_anterior],AL   
+        MOV  	AH,0Fh				; obtem modo de video atual
+    	INT  	10h					; chama BIOS
+    	MOV  	[modo_anterior],AL  ; salva modo de video 
 
 ;Alterar modo de video para gráfico 640x480 16 cores
-    	MOV     	AL,12h
-   		MOV     	AH,0
-    	INT     	10h
+    	MOV     	AL,12h	; 640x480 16 cores
+   		MOV     	AH,0	; set video mode
+    	INT     	10h		; chama BIOS
 
 ;Instalação do tratamento para iterrupcao de teclado (INT 9h)
-		CLI
-        MOV 	AX, 0
-        MOV 	ES, AX
-        MOV 	AX, [ES:4 * 9 + 2]
-        MOV 	[DS:int9_original_segment], AX
-        MOV 	AX, [ES:4 * 9]
-        MOV 	[ds:int9_original_offset], AX
-        MOV 	AX, CS
-        MOV 	word[ES:4 * 9 + 2], AX
-        MOV 	word[ES:4 * 9], key_handler
+		CLI											;Desabilita interrupções
+        MOV 	AX, 0								;Pega o segmento do vetor de interrupção
+        MOV 	ES, AX								;Coloca em ES
+        MOV 	AX, [ES:4 * 9 + 2]					;Pega o segmento do vetor de interrupção
+        MOV 	[DS:int9_original_segment], AX		;Salva o segmento
+        MOV 	AX, [ES:4 * 9]						;Pega o offset do vetor de interrupção
+        MOV 	[ds:int9_original_offset], AX		;Salva o offset
+        MOV 	AX, CS								;Coloca o segmento do código em AX
+        MOV 	word[ES:4 * 9 + 2], AX				;Coloca o segmento do código no vetor de interrupção
+        MOV 	word[ES:4 * 9], key_handler			;Coloca o offset do código no vetor de interrupção
         STI
 
 menu:
 		;Menu inicial do jogo
-		CALL intro_menu
+		CALL intro_menu								;Chama o menu inicial
 
+;Inicializar parametros
 initialize_params:
-		;Inicializacao de todos os parametros; Apesar de estarem definidos inicialmente no segmento de dados, essas variaveis precisam ser reinicializadas quando ocorre um game over e o jogador decide recomecar a partida
+		MOV		word[posX], 320					;posição X inicial da bola
+		MOV		word[posY], 240					;posição Y inicial da bola
 
-		;Inicializacao da posicao da bolinha
-		MOV		word[posX], 320
-		MOV		word[posY], 240
+		MOV		byte[on_obstacles_right], 49	;barreira direita
+		MOV		byte[on_obstacles_right+1], 49	;barreira direita
+		MOV		byte[on_obstacles_right+2], 49	;barreira direita
+		MOV		byte[on_obstacles_right+3], 49	;barreira direita
+		MOV		byte[on_obstacles_right+4], 49	;barreira direita
 
-		;Definindo as paredes como ativas
-		MOV		CX, 5
-		XOR		BX, BX
-		.ativa_paredes:
-		;Loop de 5 iteracoes, para cada uma das paredes. Em cada iteracao, as paredes de ambos os lados no mesmo nivel sao definidas como ativas
-		MOV		byte[on_obstacles_right+BX], 49
-		MOV		byte[on_obstacles_left+BX], 49
-		INC		BX
-		LOOP 	.ativa_paredes
+		MOV		byte[on_obstacles_left], 49		;barreira esquerda
+		MOV		byte[on_obstacles_left+1], 49	;barreira esquerda
+		MOV		byte[on_obstacles_left+2], 49	;barreira esquerda
+		MOV		byte[on_obstacles_left+3], 49	;barreira esquerda
+		MOV		byte[on_obstacles_left+4], 49	;barreira esquerda
 
-;Desenhar Retas
+;Desenhar Retas de limitação
 draw_lines:
-		;Desenha a reta branca que define o limite inferior da tela
-		MOV		byte[cor],branco_intenso
-		MOV 	AX, 30
-		PUSH	AX
-		MOV		AX, 0
-		PUSH	AX
-		MOV		AX, 600
-		PUSH 	AX
-		MOV		AX, 0
-		PUSH	AX
-		CALL	line
+		MOV		byte[cor],branco_intenso ;cor branca
+		MOV 	AX, 30					 ;coluna 30
+		PUSH	AX						 ;empilha coluna
+		MOV		AX, 0					 ;linha 0
+		PUSH	AX						 ;empilha linha
+		MOV		AX, 600					 ;coluna 600
+		PUSH 	AX						 ;empilha coluna
+		MOV		AX, 0					 ;linha 0
+		PUSH	AX						 ;empilha linha
+		CALL	line					 ;desenha linha
 
-		;Desenha a reta branca que define o limite superior da tela
-		MOV 	AX, 30
-		PUSH	AX
-		MOV		AX, 479
-		PUSH	AX
-		MOV		AX, 600
-		PUSH 	AX
-		MOV		AX, 479
-		PUSH	AX
-		CALL	line
+		MOV 	AX, 30					 ;coluna 30
+		PUSH	AX						 ;empilha coluna
+		MOV		AX, 479					 ;linha 479
+		PUSH	AX						 ;empilha linha
+		MOV		AX, 600					 ;coluna 600
+		PUSH 	AX						 ;empilha coluna
+		MOV		AX, 479					 ;linha 479
+		PUSH	AX						 ;empilha linha
+		CALL	line					 ;desenha linha
 		
-		JMP 	walls
+		JMP 	walls					 ;desenha barreiras
 
 ;Funcao que obtem as coordenadas da proxima parede a ser desenhada (incrementa 96 a posicao antiga cada vez que chamada, pois 96 eh a distancia entre cada parede)
 next_rect:
-		MOV		AX, word[obstacle_y]
-		ADD		AX, 96
-		MOV		word[obstacle_y], AX
+		MOV		AX, word[obstacle_y]	;pega a posição Y
+		ADD		AX, 96					;incrementa 96
+		MOV		word[obstacle_y], AX	;salva a nova posição Y
 
-		MOV		AX, word[obstacle_y2]
-		ADD		AX, 96
-		MOV		word[obstacle_y2], AX
+		MOV		AX, word[obstacle_y2]	;pega a posição Y2
+		ADD		AX, 96					;incrementa 96
+		MOV		word[obstacle_y2], AX	;salva a nova posição Y2
 		RET
 
-;Desenha as paredes coloridas no lado direito
-walls:	
-		MOV		word[obstacle_x], 5
-		MOV		word[obstacle_x2], 30
-		MOV		word[obstacle_y], 5
-		MOV		word[obstacle_y2], 86
+;Desenhar paredes coloridas no lado direito
+walls:	MOV		word[obstacle_x], 5		;posição X inicial
+		MOV		word[obstacle_x2], 30	;posição X final
+		MOV		word[obstacle_y], 5		;posição Y inicial
+		MOV		word[obstacle_y2], 86	;posição Y final
 
-		MOV		byte[cor], azul
-		CALL	full_rectangle	
-		CALL 	next_rect
+		MOV		byte[cor], azul			;cor azul
+		CALL	full_rectangle			;desenha retângulo
+		CALL 	next_rect				;incrementa posição Y
 
-		MOV		byte[cor], azul_claro
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], azul_claro	;cor azul claro
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 		
-		MOV		byte[cor], verde
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], verde		;cor verde
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
-		MOV		byte[cor], amarelo
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], amarelo		;cor amarelo
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
-		MOV		byte[cor], vermelho
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], vermelho		;cor vermelho
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 	
-;Desenha as paredes coloridas no lado esquerdo		
-walls2:	MOV		word[obstacle_x], 605
-		MOV		word[obstacle_x2], 630
-		MOV		word[obstacle_y], 5
-		MOV		word[obstacle_y2], 86
+;Desenhar paredes coloridas no lado esquerdo		
+walls2:	MOV		word[obstacle_x], 605	;posição X inicial
+		MOV		word[obstacle_x2], 630	;posição X final
+		MOV		word[obstacle_y], 5		;posição Y inicial
+		MOV		word[obstacle_y2], 86	;posição Y final
 
-		MOV		byte[cor], azul
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], azul			;cor azul
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
-		MOV		byte[cor], azul_claro
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], azul_claro	;cor azul claro
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 		
-		MOV		byte[cor], verde
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], verde		;cor verde
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
-		MOV		byte[cor], amarelo
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], amarelo		;cor amarelo
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
 		
-		MOV		byte[cor], vermelho
-		CALL	full_rectangle
-		CALL	next_rect
+		MOV		byte[cor], vermelho		;cor vermelho
+		CALL	full_rectangle			;desenha retângulo
+		CALL	next_rect				;incrementa posição Y
 
 ;Inicializar as raquetes, colocando-as em uma posicao proxima ao centro da tela
 inicializa_raquetes:
-		MOV		byte[cor], magenta
-		CALL	raquete_1Fn
+		MOV		byte[cor], magenta		;cor magenta
+		CALL	raquete_1Fn				;desenha raquete 1
 
-		MOV		byte[cor], azul_claro
-		CALL	raquete_2Fn
-        JMP     print_ball
+		MOV		byte[cor], azul_claro	;cor azul claro
+		CALL	raquete_2Fn				;desenha raquete 2
+        JMP     print_ball				;desenha bola
+
 
 ;Label auxiliar que realiza o jump para a reincializacao dos parametros se o jogador decidir recomecar o jogo apos um game over
 initialize_params_je:
-		JMP		initialize_params
+		JMP		initialize_params		;reinicializa os parametros
 
 ;========================================== LOOP PRINCIPAL ==========================================
 ;Verifica se a tecla 'p' foi pressionada. Se sim, faz a chamada do menu de pausa. Se nao, passa adiante para a proxima verificacao
 verify_pause_menu:
-        MOV     AH, [pressed_keys+4]
-        CMP     AH, 49
-        JE      call_pause_menu
-        JMP     verify_game_over
+        MOV     AH, [pressed_keys+4]	;verifica se a tecla P foi pressionada
+        CMP     AH, 49					;compara com 1
+        JE      call_pause_menu			;chama o menu de pause
+        JMP     verify_game_over		;verifica se o jogo acabou
 
 ;Chama o menu de pausa em caso de o usuario ter pressionado a tecla 'p'
 call_pause_menu:
@@ -230,14 +228,14 @@ call_pause_menu:
     
 ;Verifica se a tecla 'q' foi pressionada. Se sim, faz a chamada do menu de quit. Se nao, passa adiante para a proxima verificacao
 verify_quit_menu:
-        MOV     AH, [pressed_keys+7]
-        CMP     AH, 49
-        JE      call_quit_menu
-        JMP     print_ball
+        MOV     AH, [pressed_keys+7]	;verifica se a tecla Q foi pressionada
+        CMP     AH, 49					;compara com 1
+        JE      call_quit_menu			;chama o menu de sair
+        JMP     print_ball				;desenha a bola
 
 ;Chama o menu de quit em caso de o usuario ter pressionado a tecla 'q'
 call_quit_menu:
-        CALL    exit_menu
+        CALL    exit_menu				;chama o menu de sair
 
 ;Faz a impressao da bolinha na tela
 print_ball:
@@ -322,191 +320,171 @@ check_raquete:
 .check_raquete_5:
 		;Se nenhuma acao foi feita com as raquetes, segue-se com as verificacoes (no caso, se o menu de pausa foi acionado)
 		JMP		verify_pause_menu
-
+		
 verify_upper_bound:		
-		;Verifica se a raquete da direita esta abaixo do limite superior da tela. Se sim, sua posicao eh alterada para cima. Se nao, nada acontece
-		MOV		BX, word[raquete_y2_1]
-		CMP		BX, 470
-		JL		raquete_up
-		RET
+		MOV		BX, word[raquete_y2_1]	;pega a posição Y2 da raquete 1
+		CMP		BX, 470					;compara com 470
+		JL		raquete_up				;se for menor, sobe a raquete
+		RET								;retorna
 
-verify_upper_bound_2:	
-		;Verifica se a raquete da esquerda esta abaixo do limite superior da tela. Se sim, sua posicao eh alterada para cima. Se nao, nada acontece	
-		MOV		BX, word[raquete_y2_2]
-		CMP		BX, 470
-		JL		raquete_up_2
-		RET
+verify_upper_bound_2:		
+		MOV		BX, word[raquete_y2_2]	;pega a posição Y2 da raquete 2
+		CMP		BX, 470					;compara com 470
+		JL		raquete_up_2			;se for menor, sobe a raquete
+		RET								;retorna
 
-verify_lower_bound:	
-		;Verifica se a raquete da direita esta acima do limite inferior da tela. Se sim, sua posicao eh alterada para baixo. Se nao, nada acontece		
-		MOV		BX, word[raquete_y_1]
-		CMP		BX, 5
-		JG		raquete_down
-		RET
+verify_lower_bound:		
+		MOV		BX, word[raquete_y_1]	;pega a posição Y da raquete 1
+		CMP		BX, 5					;compara com 5
+		JG		raquete_down			;se for maior, desce a raquete
+		RET								;retorna
 
-verify_lower_bound_2:
-		;Verifica se a raquete da esquerda esta acima do limite inferior da tela. Se sim, sua posicao eh alterada para baixo. Se nao, nada acontece
-		MOV		BX, word[raquete_y_2]
-		CMP		BX, 5
-		JG		raquete_down_2
-		RET
+verify_lower_bound_2:		
+		MOV		BX, word[raquete_y_2]	;pega a posição Y da raquete 2
+		CMP		BX, 5					;compara com 5
+		JG		raquete_down_2			;se for maior, desce a raquete
+		RET								;retorna
 
 raquete_up:
-		;Se a raquete da direita estiver abaixo do limite superior da tela e o usuario pressionou a seta para cima, a raquete tem sua posicao incrementada em 5
-		MOV 	AX, word[raquete_1]
-		ADD		AX, 5
-		MOV 	word[raquete_1], AX
-		JMP		raquete_draw
+		MOV 	AX, word[raquete_1]		;pega a posição da raquete 1
+		ADD		AX, 5					;incrementa 5
+		MOV 	word[raquete_1], AX		;salva a nova posição	
+		JMP		raquete_draw			;desenha a raquete
 
 raquete_up_2:
-		;Se a raquete da esquerda estiver abaixo do limite superior da tela e o usuario pressionou a tecla 'w', a raquete tem sua posicao incrementada em 5
-		MOV 	AX, word[raquete_2]
-		ADD		AX, 5
-		MOV 	word[raquete_2], AX
-		JMP		raquete_draw
+		MOV 	AX, word[raquete_2]		;pega a posição da raquete 2
+		ADD		AX, 5					;incrementa 5
+		MOV 	word[raquete_2], AX		;salva a nova posição
+		JMP		raquete_draw			;desenha a raquete
 
 raquete_down:
-		;Se a raquete da esquerda estiver acima do limite inferior da tela e o usuario pressionou a seta para baixo, a raquete tem sua posicao decrementada em 5
-		MOV 	AX, word[raquete_1]
-		SUB		AX, 5
-		MOV 	word[raquete_1], AX
-		JMP		raquete_draw
+		MOV 	AX, word[raquete_1]		;pega a posição da raquete 1
+		SUB		AX, 5					;decrementa 5
+		MOV 	word[raquete_1], AX		;salva a nova posição
+		JMP		raquete_draw			;desenha a raquete
 
 raquete_down_2:
-		;Se a raquete da direita estiver acima do limite inferior da tela e o usuario pressionou a tecla 's', a raquete tem sua posicao decrementada em 5
-		MOV 	AX, word[raquete_2]
-		SUB		AX, 5
-		MOV 	word[raquete_2], AX
-		JMP		raquete_draw
+		MOV 	AX, word[raquete_2]		;pega a posição da raquete 2
+		SUB		AX, 5					;decrementa 5
+		MOV 	word[raquete_2], AX		;salva a nova posição
+		JMP		raquete_draw			;desenha a raquete
 
 raquete_draw:	
-		;Desenha raquetes em preto nas suas posicoes antigas, com o objetivo de apaga-las da tela
-		MOV		byte[cor], pRETo
-		CALL	raquete_1Fn
-		CALL	raquete_2Fn
+		MOV		byte[cor], pRETo		;cor preta
+		CALL	raquete_1Fn				;desenha a raquete 1
+		CALL	raquete_2Fn				;desenha a raquete 2
 		
-		;Desenha a raquete magenta em sua nova posicao
-		MOV		BX, [raquete_1]
-		ADD		BX, 220
-		MOV		word[raquete_y_1], BX
-		ADD		BX, 81
-		MOV		word[raquete_y2_1], BX	
-		MOV		byte[cor], magenta
-		CALL	raquete_1Fn
+		MOV		BX, [raquete_1]			;pega a posição da raquete 1
+		ADD		BX, 220					;incrementa 220
+		MOV		word[raquete_y_1], BX	;salva a nova posição
+		ADD		BX, 81					;incrementa 81
+		MOV		word[raquete_y2_1], BX	;salva a nova posição
+		MOV		byte[cor], magenta		;cor magenta
+		CALL	raquete_1Fn				;desenha a raquete 1
 
-		;Desenha a raquete azul em sua nova posicao
-		MOV		BX, [raquete_2]
-		ADD		BX, 220
-		MOV		word[raquete_y_2], BX
-		ADD		BX, 81
-		MOV		word[raquete_y2_2], BX	
-		MOV		byte[cor], azul_claro
-		CALL	raquete_2Fn
+		MOV		BX, [raquete_2]			;pega a posição da raquete 2
+		ADD		BX, 220					;incrementa 220
+		MOV		word[raquete_y_2], BX	;salva a nova posição
+		ADD		BX, 81					;incrementa 81
+		MOV		word[raquete_y2_2], BX	;salva a nova posição
+		MOV		byte[cor], azul_claro	;cor azul claro
+		CALL	raquete_2Fn				;desenha a raquete 2
 
-		RET
-;========================================== LOOP PRINCIPAL ==========================================
+		RET								;retorna
 
 ;========================================== PAUSE MENU ==========================================
 ;Funcao que escreve uma mensagem de pausa simples na tela e fica a espera de o usuario pressionar novamente a tecla 'p'
 paused_menu:
-		;Escreve a mensagem de pause na tela
-    	MOV     CX,7				
-    	MOV     BX,0
-    	MOV     DH,14 			
-    	MOV     DL,36				
-		MOV		byte[cor],branco_intenso
+		;Escrever uma mensagem
+    	MOV     CX,7						;número de caracteres
+    	MOV     BX,0						;posição inicial
+    	MOV     DH,14 						;linha 0-29
+    	MOV     DL,36						;coluna 0-79
+		MOV		byte[cor],branco_intenso	;cor branca
 
 l7:
-		CALL	cursor
-    	MOV     AL,[BX+paused_mens]
-		CALL	caracter
-    	INC     BX					
-		INC		DL					
-    	LOOP    l7
+		CALL	cursor						;chama cursor
+    	MOV     AL,[BX+paused_mens]			;pega o caracter
+		CALL	caracter					;escreve o caracter
+    	INC     BX							;proximo caracter
+		INC		DL							;avanca a coluna
+    	LOOP    l7							;repete
 
-        CALL    debounce
+        CALL    debounce					;debounce
 
 ;Verifica se o usuario pressionou a tecla 'p'
 wait_paused_menu:
-        MOV     AH, [pressed_keys+4]
-		CMP		AH, 49
-		;Se nao, fica travado em loop esperando por essa acao do usuario
-		JNE		wait_paused_menu	
-		;Se sim, retoma o jogo
-		JMP		quit_pause
+        MOV     AH, [pressed_keys+4]		;verifica se a tecla P foi pressionada
+		CMP		AH, 49						;compara com 1
+		JNE		wait_paused_menu			;se não for 1, retorna ao inicio do loop para esperar uma resposta do usuario
+		JMP		quit_pause					;chama o menu de sair
 
 quit_pause:
-		;Apaga a mensagem de pausa da tela, sobrescrevendo-a com preto
-        MOV     CX,7				
-    	MOV     BX,0
-    	MOV     DH,14				
-    	MOV     DL,36				
-		MOV		byte[cor],pRETo
+	;Escrever uma mensagem
+        MOV     CX,7				;número de caracteres
+    	MOV     BX,0				;posição inicial
+    	MOV     DH,14				;linha 0-29
+    	MOV     DL,36				;coluna 0-79
+		MOV		byte[cor],pRETo		;cor preta
 
 l8:
-		CALL	cursor
-    	MOV     AL,[BX+paused_mens]
-		CALL	caracter
-    	INC     BX					
-		INC		DL					
+		CALL	cursor				;chama cursor
+    	MOV     AL,[BX+paused_mens]	;pega o caracter
+		CALL	caracter			;escreve o caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
     	LOOP    l8
 
-		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
-        CALL    debounce
+        CALL    debounce			;debounce
 
-        RET
-;========================================== PAUSE MENU ==========================================
+        RET							;retorna
 
 ;========================================== QUIT MENU ==========================================
 ;Funcao que escreve uma mensagem de quit simples na tela e fica a espera da decisao do usuario de finalizar ou nao o jogo
 exit_menu:
-		;Escreve a mensagem de quit, perguntando ao usuario se ele realmente deseja finalizar o jogo
-    	MOV     CX,22				
-    	MOV     BX,0
-    	MOV     DH,14				
-    	MOV     DL,30				
-		MOV		byte[cor],branco_intenso
+	;Escrever uma mensagem
+    	MOV     CX,22						;número de caracteres
+    	MOV     BX,0						;posição inicial
+    	MOV     DH,14						;linha 0-29
+    	MOV     DL,30						;coluna 0-79
+		MOV		byte[cor],branco_intenso	;cor branca
 l4:
-		CALL	cursor
-    	MOV     AL,[BX+mens_exit]
-		CALL	caracter
-    	INC     BX					
-		INC		DL					
+		CALL	cursor						;chama cursor
+    	MOV     AL,[BX+mens_exit]			;pega o caracter
+		CALL	caracter					;escreve o caracter
+    	INC     BX							;proximo caracter
+		INC		DL							;avanca a coluna
 	
-    	LOOP    l4
+    	LOOP    l4							;repete
 
-		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
-        CALL    debounce
+        CALL    debounce					;debounce
 
 wait_exit_input:
-		;Verifica se o usuario pressionou a tecla 'y' (no caso, se ele decidiu encerrar o jogo)
-		MOV     AH, [pressed_keys+5]
-        CMP     AH, 49
-		JE      exit
+		; Esperar entrada do usuário
+		MOV     AH, [pressed_keys+5]		;verifica se a tecla Y foi pressionada
+        CMP     AH, 49						;compara com 1
+		JE      exit						;chama a função de sair
+		MOV     AH, [pressed_keys+6]		;verifica se a tecla N foi pressionada
+        CMP     AH, 49						;compara com 1
+		JE      clear_exit_screen			;apaga a mensagem
+		JMP     wait_exit_input          	;repete para aguardar entrada válida
 
-		;Verifica se o usuario pressionou a tecla 'n' (no caso, se ele decidiu nao encerrar o jogo)
-		MOV     AH, [pressed_keys+6]
-        CMP     AH, 49
-		JE      clear_exit_screen
-
-		;Se nenhuma das teclas foi pressionada, volta o loop e fica a espera da decisao do usuario
-		JMP     wait_exit_input          
-
+;apaga uma mensagem
 clear_exit_screen:
 		;Apaga a mensagem de quit da tela, sobrescrevendo-a com preto
     	MOV     CX,22				;número de caracteres
-    	MOV     BX,0
+    	MOV     BX,0				;posição inicial
     	MOV     DH,14				;linha 0-29
     	MOV     DL,30				;coluna 0-79
-		MOV		byte[cor],pRETo
+		MOV		byte[cor],pRETo		;cor preta
 l5:
-		CALL	cursor
-    	MOV     AL,[BX+mens_exit]
-		CALL	caracter
-    	INC     BX					
-		INC		DL					
+		CALL	cursor				;chama cursor
+    	MOV     AL,[BX+mens_exit]	;pega o caracter
+		CALL	caracter			;escreve o caracter
+    	INC     BX					;proximo caracter
+		INC		DL					;avanca a coluna
 	
-    	LOOP    l5
+    	LOOP    l5					;repete
 
 		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
 		CALL    debounce
@@ -517,29 +495,218 @@ l5:
 ;========================================== EXIT ==========================================
 ;Realiza a finalizacao do programa
 exit:	
-		;Desinstala a interrupcao INT 9h e restaura os valores originais
-		PUSH 	ES
-		MOV 	AX, 0
-		MOV 	ES, AX
-		CLI
-		MOV 	AX, [int9_original_offset]
-		MOV 	[ES:4 * 9], AX
-		MOV 	AX, [int9_original_segment]
-		MOV 	[ES:4 * 9 + 2], AX
-		STI
-		POP 	ES
+		PUSH 	ES								
+		MOV 	AX, 0							
+		MOV 	ES, AX							;Coloca 0 em ES
+		CLI										;Desabilita interrupções
+		MOV 	AX, [int9_original_offset]		;Pega o offset do vetor de interrupção
+		MOV 	[ES:4 * 9], AX					;Coloca o offset do vetor de interrupção em ES
+		MOV 	AX, [int9_original_segment]		;Pega o segmento do vetor de interrupção
+		MOV 	[ES:4 * 9 + 2], AX				;Coloca o segmento do vetor de interrupção em ES
+		STI										;Habilita interrupções
+		POP 	ES								;Restaura ES
 		
-		;Sai do modo grafico
-		MOV  	AH,0   				; set video mode
-	    MOV  	AL,[modo_anterior] 	; modo anterior
-	    INT  	10h
+		MOV  	AH,0   							;restaura modo de video
+	    MOV  	AL,[modo_anterior] 				;modo anterior
+	    INT  	10h								;chama BIOS
+		
+		MOV     AX,4C00h						;termina o programa
+		INT     21h								;chama DOS
 
-		;Finaliza o programa
-		MOV     AX,4C00h
-		INT     21h
-;========================================== EXIT ==========================================
+;===================== TRATAMENTO DE INTERRUPCOES
+key_handler:
+			PUSH    ES			
+			PUSH    AX			
+			PUSH    BX			
+			MOV     AX, ds				;Coloca o segmento de dados em AX
+			MOV     es, AX				;Coloca o segmento de dados em ES
+			IN      al, 60h				;Lê a porta 60h
 
-;========================================== DATA ==========================================
+			MOV     BH, AL				;Salva AL em BH
+			IN      AL, 061h    		;Lê a porta 61h
+			MOV     BL, AL				;Salva AL em BL
+			OR      AL, 080h			;Liga o bit 7
+			OUT     061h, AL    		;Escreve na porta 61h
+			MOV     AL, BL				;Coloca BL em AL
+			OUT     061h, AL 			;Escreve na porta 61h
+			MOV     AL, BH				;Coloca BH em AL
+			
+			CMP     AL, 0e0h			;Verifica se a tecla foi pressionada
+			JZ      .ignore				;Se não foi, ignora
+			MOV     AH, 0				;Se foi, coloca 0 em AH
+			MOV     BX, AX				;Coloca AX em BX
+			and     BL, 01111111b		
+			and     AL, 10000000b
+			CMP     AL, 10000000b
+			JZ      .key_released_jmp	;Se a tecla foi solta, pula para key_released
+		
+		.key_pressed:
+			CMP     BL, 72				;Verifica se a tecla UP foi pressionada
+            JE      .set_key_1			;Se foi, pula para set_key_1
+
+            CMP     BL, 80				;Verifica se a tecla DOWN foi pressionada
+            JE      .set_key_2			;Se foi, pula para set_key_2
+
+            CMP     BL, 17				;Verifica se a tecla W foi pressionada
+            JE      .set_key_3			;Se foi, pula para set_key_3
+
+            CMP     BL, 31				;Verifica se a tecla S foi pressionada
+            JE      .set_key_4			;Se foi, pula para set_key_4
+
+            CMP     BL, 25				;Verifica se a tecla P foi pressionada
+            JE      .set_key_5			;Se foi, pula para set_key_5
+
+            CMP     BL, 21				;Verifica se a tecla Y foi pressionada
+            JE      .set_key_6			;Se foi, pula para set_key_6
+
+            CMP     BL, 49				;Verifica se a tecla N foi pressionada
+            JE      .set_key_7			;Se foi, pula para set_key_7	
+
+            CMP     BL, 16				;Verifica se a tecla Q foi pressionada
+            JE      .set_key_8			;Se foi, pula para set_key_8
+
+            CMP     BL, 28				;Verifica se a tecla ENTER foi pressionada
+            JE      .set_key_9			;Se foi, pula para set_key_9
+			
+			JMP     .ignore				;Se não foi nenhuma das teclas, ignora
+
+        .ignore:
+            MOV     AL, 20h				;Coloca	20h em AL
+			OUT     20h, AL				;Escreve em 20h
+			POP     BX
+			POP     AX
+			POP     ES
+			IRET 						;Retorna da interrupção
+
+        .key_released_jmp:
+            JMP     .key_released		;Pula para key_released
+
+        .set_key_1:
+            MOV     byte[pressed_keys], 49		;Coloca 1 em pressed_keys (UP)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_2:
+            MOV     byte[pressed_keys+1], 49	;Coloca 1 em pressed_keys+1 (DOWN)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_3:
+            MOV     byte[pressed_keys+2], 49	;Coloca 1 em pressed_keys+2 (W)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_4:
+            MOV     byte[pressed_keys+3], 49	;Coloca 1 em pressed_keys+3 (S)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_5:
+            MOV     byte[pressed_keys+4], 49	;Coloca 1 em pressed_keys+4 (P)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_6:
+            MOV     byte[pressed_keys+5], 49	;Coloca 1 em pressed_keys+5 (Y)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_7:
+            MOV     byte[pressed_keys+6], 49	;Coloca 1 em pressed_keys+6 (N)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_8:
+            MOV     byte[pressed_keys+7], 49	;Coloca 1 em pressed_keys+7 (Q)
+            JMP     .ignore						;Pula para ignore
+
+        .set_key_9:
+            MOV     byte[pressed_keys+8], 49	;Coloca 1 em pressed_keys+8 (ENTER)
+            JMP     .ignore						;Pula para ignore
+
+
+		.key_released:
+
+			CMP     BL, 72						;Verifica se a tecla UP foi solta
+            JE      .unset_key_1				;Se foi, pula para unset_key_1
+
+            CMP     BL, 80						;Verifica se a tecla DOWN foi solta
+            JE      .unset_key_2				;Se foi, pula para unset_key_2
+
+            CMP     BL, 17						;Verifica se a tecla W foi solta
+            JE      .unset_key_3				;Se foi, pula para unset_key_3
+
+            CMP     BL, 31						;Verifica se a tecla S foi solta
+            JE      .unset_key_4				;Se foi, pula para unset_key_4
+
+            CMP     BL, 25						;Verifica se a tecla P foi solta
+            JE      .unset_key_5				;Se foi, pula para unset_key_5
+
+            CMP     BL, 21						;Verifica se a tecla Y foi solta
+            JE      .unset_key_6				;Se foi, pula para unset_key_6
+
+            CMP     BL, 49						;Verifica se a tecla N foi solta
+            JE      .unset_key_7				;Se foi, pula para unset_key_7
+
+            CMP     BL, 16						;Verifica se a tecla Q foi solta
+            JE      .unset_key_8				;Se foi, pula para unset_key_8
+
+            CMP     BL, 28						;Verifica se a tecla ENTER foi solta
+            JE      .unset_key_9				;Se foi, pula para unset_key_9
+
+            JMP     .ignore2					;Se não foi nenhuma das teclas, ignora
+
+        .ignore2:
+            MOV     AL, 20h						;Coloca 20h em AL
+			OUT     20h, AL						;Escreve em 20h
+			POP     BX
+			POP     AX
+			POP     ES
+			IRET 								;Retorna da interrupção
+
+        .unset_key_1:
+            MOV     byte[pressed_keys], 48		;Coloca 0 em pressed_keys (UP)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_2:
+            MOV     byte[pressed_keys+1], 48	;Coloca 0 em pressed_keys+1 (DOWN)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_3:
+            MOV     byte[pressed_keys+2], 48	;Coloca 0 em pressed_keys+2 (W)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_4:
+            MOV     byte[pressed_keys+3], 48	;Coloca 0 em pressed_keys+3 (S)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_5:
+            MOV     byte[pressed_keys+4], 48	;Coloca 0 em pressed_keys+4 (P)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_6:
+            MOV     byte[pressed_keys+5], 48	;Coloca 0 em pressed_keys+5 (Y)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_7:
+            MOV     byte[pressed_keys+6], 48	;Coloca 0 em pressed_keys+6 (N)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_8:
+            MOV     byte[pressed_keys+7], 48	;Coloca 0 em pressed_keys+7 (Q)
+            JMP     .ignore2					;Pula para ignore2
+
+        .unset_key_9:
+            MOV     byte[pressed_keys+8], 48	;Coloca 0 em pressed_keys+8 (ENTER)
+            JMP     .ignore2					;Pula para ignore2
+
+disable_int9:
+            PUSH    ES							
+			MOV     AX, 0
+			MOV     ES, AX							;Coloca 0 em ES
+			CLI										;Desabilita interrupções
+			MOV     AX, [int9_original_offset]		;Pega o offset do vetor de interrupção
+			MOV     [ES:4 * 9], AX					;Coloca o offset do vetor de interrupção em ES
+			MOV     AX, [int9_original_segment]		;Pega o segmento do vetor de interrupção
+			MOV     [ES:4 * 9 + 2], AX				;Coloca o segmento do vetor de interrupção em ES
+			STI										;Habilita interrupções
+			POP     ES
+			RET
+
+;*******************************************************************
 segment data
 
 cor		db		branco_intenso
@@ -567,10 +734,9 @@ coluna  		dw  	0
 deltax			dw		0
 deltay			dw		0	
 
-mens_new		db		'Gostaria de iniciar uma nova partida? y/n'
-mens_exit    	db  	'Deseja mesmo sair? y/n'
-mens_intro		db 		'Selecione a dificuldade do jogo:'
-
+mens_new		db		'Gostaria de iniciar uma nova partida? y/n'		;mensagem de novo jogo
+mens_exit    	db  	'Deseja mesmo sair? y/n'						;mensagem de saida
+mens_intro		db 		'Selecione a dificuldade do jogo:'				;mensagem de introdução
 mens_facil		db 		'Facil'
 mens_medio		db		'Medio'
 mens_dificil	db		'Dificil'
@@ -584,21 +750,21 @@ medio_col_pos	dw		26
 dif_line_pos	dw		18
 dif_col_pos		dw		26
 
-select_arrow	db		'>'
+select_arrow	db		'>'			;seta de seleção
 
 obstacle_y		dw		5
 obstacle_y2		dw		86
 obstacle_x		dw		5
 obstacle_x2		dw		30
 
-arrow_line_pos	dw		14
-arrow_col_pos	dw		24
+arrow_line_pos	dw		14			;posição da linha da seta	
+arrow_col_pos	dw		24			;posição da coluna da seta
 
 raquete_y_1		dw		220
 raquete_y2_1	dw		301
 
 raquete_y_2		dw		220
-raquete_y2_2	dw		301
+raquete_y2_2	dw		301			
 
 vel				dw		10		;Velocidade da bolinha
 posX			dw		320		;Posicao da bolinha no eixo X
