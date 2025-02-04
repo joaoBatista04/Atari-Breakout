@@ -5,6 +5,9 @@
 ;
 global line
 extern plot_xy
+extern deltax
+extern deltay
+
 line:
 		PUSH 	BP
 	    MOV	 	BP,SP
@@ -173,5 +176,3 @@ End_line:
 		POPF
 		POP		BP
 		RET		8
-
-%include "Data.asm"

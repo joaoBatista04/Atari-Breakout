@@ -14,7 +14,7 @@ global raquete_y2_1
 global raquete_y_2
 global raquete_y2_2
 global branco_intenso
-global	pRETo
+global pRETo
 global verde
 global vermelho
 global amarelo		
@@ -40,22 +40,23 @@ global exit
 global on_obstacles_right
 global on_obstacles_left
 global draw_lines
+global deltax
+global deltay
 
 extern game_over
 extern intro_menu
 extern DirXY
 extern plot_xy
 extern line
-extern full_circle
 extern circle
 extern cursor
 extern caracter
-extern rectangle
 extern raquete_1Fn
 extern raquete_2Fn
 extern delay
 extern full_rectangle
 extern debounce
+extern key_handler
 
 segment code
 ..start:
@@ -89,27 +90,30 @@ segment code
         MOV 	word[ES:4 * 9], key_handler
         STI
 
+menu:
 		;Menu inicial do jogo
 		CALL intro_menu
 
 initialize_params:
+		;Inicializacao de todos os parametros; Apesar de estarem definidos inicialmente no segmento de dados, essas variaveis precisam ser reinicializadas quando ocorre um game over e o jogador decide recomecar a partida
+
+		;Inicializacao da posicao da bolinha
 		MOV		word[posX], 320
 		MOV		word[posY], 240
 
-		MOV		byte[on_obstacles_right], 49
-		MOV		byte[on_obstacles_right+1], 49
-		MOV		byte[on_obstacles_right+2], 49
-		MOV		byte[on_obstacles_right+3], 49
-		MOV		byte[on_obstacles_right+4], 49
-
-		MOV		byte[on_obstacles_left], 49
-		MOV		byte[on_obstacles_left+1], 49
-		MOV		byte[on_obstacles_left+2], 49
-		MOV		byte[on_obstacles_left+3], 49
-		MOV		byte[on_obstacles_left+4], 49
+		;Definindo as paredes como ativas
+		MOV		CX, 5
+		XOR		BX, BX
+		.ativa_paredes:
+		;Loop de 5 iteracoes, para cada uma das paredes. Em cada iteracao, as paredes de ambos os lados no mesmo nivel sao definidas como ativas
+		MOV		byte[on_obstacles_right+BX], 49
+		MOV		byte[on_obstacles_left+BX], 49
+		INC		BX
+		LOOP 	.ativa_paredes
 
 ;Desenhar Retas
 draw_lines:
+		;Desenha a reta branca que define o limite inferior da tela
 		MOV		byte[cor],branco_intenso
 		MOV 	AX, 30
 		PUSH	AX
@@ -121,6 +125,7 @@ draw_lines:
 		PUSH	AX
 		CALL	line
 
+		;Desenha a reta branca que define o limite superior da tela
 		MOV 	AX, 30
 		PUSH	AX
 		MOV		AX, 479
@@ -133,6 +138,7 @@ draw_lines:
 		
 		JMP 	walls
 
+;Funcao que obtem as coordenadas da proxima parede a ser desenhada (incrementa 96 a posicao antiga cada vez que chamada, pois 96 eh a distancia entre cada parede)
 next_rect:
 		MOV		AX, word[obstacle_y]
 		ADD		AX, 96
@@ -143,8 +149,9 @@ next_rect:
 		MOV		word[obstacle_y2], AX
 		RET
 
-;Desenhar barreiras coloridas no lado direito
-walls:	MOV		word[obstacle_x], 5
+;Desenha as paredes coloridas no lado direito
+walls:	
+		MOV		word[obstacle_x], 5
 		MOV		word[obstacle_x2], 30
 		MOV		word[obstacle_y], 5
 		MOV		word[obstacle_y2], 86
@@ -169,7 +176,7 @@ walls:	MOV		word[obstacle_x], 5
 		CALL	full_rectangle
 		CALL	next_rect
 	
-;Desenhar barreiras coloridas no lado esquerdo		
+;Desenha as paredes coloridas no lado esquerdo		
 walls2:	MOV		word[obstacle_x], 605
 		MOV		word[obstacle_x2], 630
 		MOV		word[obstacle_y], 5
@@ -196,7 +203,7 @@ walls2:	MOV		word[obstacle_x], 605
 		CALL	full_rectangle
 		CALL	next_rect
 
-;Inicializar as raquetes
+;Inicializar as raquetes, colocando-as em uma posicao proxima ao centro da tela
 inicializa_raquetes:
 		MOV		byte[cor], magenta
 		CALL	raquete_1Fn
@@ -205,40 +212,36 @@ inicializa_raquetes:
 		CALL	raquete_2Fn
         JMP     print_ball
 
+;Label auxiliar que realiza o jump para a reincializacao dos parametros se o jogador decidir recomecar o jogo apos um game over
 initialize_params_je:
 		JMP		initialize_params
 
-;===================== LOOP PRINCIPAL
+;========================================== LOOP PRINCIPAL ==========================================
+;Verifica se a tecla 'p' foi pressionada. Se sim, faz a chamada do menu de pausa. Se nao, passa adiante para a proxima verificacao
 verify_pause_menu:
         MOV     AH, [pressed_keys+4]
         CMP     AH, 49
         JE      call_pause_menu
         JMP     verify_game_over
 
+;Chama o menu de pausa em caso de o usuario ter pressionado a tecla 'p'
 call_pause_menu:
         CALL    paused_menu
-
-verify_game_over:
-        MOV     AH, [pressed_keys+8]
-        CMP     AH, 49
-        JE      call_game_over
-        JMP     verify_quit_menu
-
-call_game_over:
-        CALL    game_over
-        JMP     draw_lines
-
     
+;Verifica se a tecla 'q' foi pressionada. Se sim, faz a chamada do menu de quit. Se nao, passa adiante para a proxima verificacao
 verify_quit_menu:
         MOV     AH, [pressed_keys+7]
         CMP     AH, 49
         JE      call_quit_menu
         JMP     print_ball
 
+;Chama o menu de quit em caso de o usuario ter pressionado a tecla 'q'
 call_quit_menu:
         CALL    exit_menu
 
+;Faz a impressao da bolinha na tela
 print_ball:
+		;Desenha a bolinha de cor preta por cima da bolinha antiga na tela, para apagar a antiga e permitir o desenho em uma nova posicao
 		MOV		byte[cor], pRETo
 		MOV		AX, word[posX]
 		PUSH 	AX
@@ -247,12 +250,20 @@ print_ball:
 		MOV		AX, 10
 		PUSH 	AX
 		CALL	circle
+
+		;Verifica se algum evento ocorreu com a bolinha e efetua o seu deslocamento ou reacao em caso positivo
 		CALL	DirXY
+
+		;Se houve game over e o usuario decidiu recomecar o jogo, volta-se para a inicializacao dos parametros
 		CMP		AH, 49
 		JE		initialize_params_je
+
+		;Se nao, segue-se com o desenho da bolinha
 		JMP		draw
 
+;Desenha a bolinha em nova posicao
 draw:
+		;Com a nova posicao da bolinha, ela eh desenhada em verde
 		MOV		byte[cor], verde
 		MOV		AX, word[posX]
 		PUSH 	AX
@@ -262,84 +273,119 @@ draw:
 		PUSH 	AX
 		CALL	circle
 
+		;Pequeno delay eh aplicado para que o deslocamento se torne fluido e visivel aos olhos
 		CALL	delay
 
+;Faz a verificao se algum dos jogadores (ou ambos) deslocaram suas raquetes
 check_raquete:
+		;Se a seta para cima foi pressionada, verifica condicoes da raquete da esquerda
 		MOV     AH, [pressed_keys]
         CMP     AH, 49
+
+		;Se nao foi pressionada, verifica-se o proximo comando para a raquete
         JNE     .check_raquete_2
+		;Se foi, verifica-se condicoes da raquete da esquerda
         CALL    verify_upper_bound_2 
+
 .check_raquete_2:
+		;Se a seta para baixo foi pressionada, verifica condicoes da raquete da esquerda
         MOV     AH, [pressed_keys+1]  
         CMP     AH, 49
+
+		;Se nao foi pressionada, verifica-se a proxima raquete
         JNE     .check_raquete_3
+
+		;Se foi, verifica-se condicoes da raquete da esquerda
         CALL    verify_lower_bound_2
+
 .check_raquete_3:
+		;Se a tecla 'w' foi pressionada, verifica condicoes da raquete da direita
         MOV     AH, [pressed_keys+2]  
         CMP     AH, 49
+
+		;Se nao foi pressionada, verifica-se o proximo comando para a raquete
         JNE     .check_raquete_4
+
+		;Se foi, verifica-se condicoes da raquete da direita
         CALL    verify_upper_bound
+
 .check_raquete_4:
+		;Se a tecla 's' foi pressionada, verifica condicoes da raquete da direita
         MOV     AH, [pressed_keys+3]  
         CMP     AH, 49
+
+		;Se nao foi pressionada, segue-se para o termino da verificacao de raquetes
         JNE     .check_raquete_5
+
+		;Se foi, verifica-se condicoes da raquete da direita
         CALL    verify_lower_bound
 .check_raquete_5:
+		;Se nenhuma acao foi feita com as raquetes, segue-se com as verificacoes (no caso, se o menu de pausa foi acionado)
 		JMP		verify_pause_menu
 
 verify_upper_bound:		
+		;Verifica se a raquete da direita esta abaixo do limite superior da tela. Se sim, sua posicao eh alterada para cima. Se nao, nada acontece
 		MOV		BX, word[raquete_y2_1]
 		CMP		BX, 470
 		JL		raquete_up
 		RET
 
-verify_upper_bound_2:		
+verify_upper_bound_2:	
+		;Verifica se a raquete da esquerda esta abaixo do limite superior da tela. Se sim, sua posicao eh alterada para cima. Se nao, nada acontece	
 		MOV		BX, word[raquete_y2_2]
 		CMP		BX, 470
 		JL		raquete_up_2
 		RET
 
-verify_lower_bound:		
+verify_lower_bound:	
+		;Verifica se a raquete da direita esta acima do limite inferior da tela. Se sim, sua posicao eh alterada para baixo. Se nao, nada acontece		
 		MOV		BX, word[raquete_y_1]
 		CMP		BX, 5
 		JG		raquete_down
 		RET
 
-verify_lower_bound_2:		
+verify_lower_bound_2:
+		;Verifica se a raquete da esquerda esta acima do limite inferior da tela. Se sim, sua posicao eh alterada para baixo. Se nao, nada acontece
 		MOV		BX, word[raquete_y_2]
 		CMP		BX, 5
 		JG		raquete_down_2
 		RET
 
 raquete_up:
+		;Se a raquete da direita estiver abaixo do limite superior da tela e o usuario pressionou a seta para cima, a raquete tem sua posicao incrementada em 5
 		MOV 	AX, word[raquete_1]
 		ADD		AX, 5
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
 
 raquete_up_2:
+		;Se a raquete da esquerda estiver abaixo do limite superior da tela e o usuario pressionou a tecla 'w', a raquete tem sua posicao incrementada em 5
 		MOV 	AX, word[raquete_2]
 		ADD		AX, 5
 		MOV 	word[raquete_2], AX
 		JMP		raquete_draw
 
 raquete_down:
+		;Se a raquete da esquerda estiver acima do limite inferior da tela e o usuario pressionou a seta para baixo, a raquete tem sua posicao decrementada em 5
 		MOV 	AX, word[raquete_1]
 		SUB		AX, 5
 		MOV 	word[raquete_1], AX
 		JMP		raquete_draw
 
 raquete_down_2:
+		;Se a raquete da direita estiver acima do limite inferior da tela e o usuario pressionou a tecla 's', a raquete tem sua posicao decrementada em 5
 		MOV 	AX, word[raquete_2]
 		SUB		AX, 5
 		MOV 	word[raquete_2], AX
 		JMP		raquete_draw
 
 raquete_draw:	
+		;Desenha raquetes em preto nas suas posicoes antigas, com o objetivo de apaga-las da tela
 		MOV		byte[cor], pRETo
 		CALL	raquete_1Fn
 		CALL	raquete_2Fn
 		
+		;Desenha a raquete magenta em sua nova posicao
 		MOV		BX, [raquete_1]
 		ADD		BX, 220
 		MOV		word[raquete_y_1], BX
@@ -348,6 +394,7 @@ raquete_draw:
 		MOV		byte[cor], magenta
 		CALL	raquete_1Fn
 
+		;Desenha a raquete azul em sua nova posicao
 		MOV		BX, [raquete_2]
 		ADD		BX, 220
 		MOV		word[raquete_y_2], BX
@@ -357,85 +404,96 @@ raquete_draw:
 		CALL	raquete_2Fn
 
 		RET
+;========================================== LOOP PRINCIPAL ==========================================
 
-;===================== LOOP PRINCIPAL
-
-;===================== PAUSE MENU
+;========================================== PAUSE MENU ==========================================
+;Funcao que escreve uma mensagem de pausa simples na tela e fica a espera de o usuario pressionar novamente a tecla 'p'
 paused_menu:
-		;Escrever uma mensagem
-    	MOV     CX,7				;número de caracteres
+		;Escreve a mensagem de pause na tela
+    	MOV     CX,7				
     	MOV     BX,0
-    	MOV     DH,14 			;linha 0-29
-    	MOV     DL,36				;coluna 0-79
+    	MOV     DH,14 			
+    	MOV     DL,36				
 		MOV		byte[cor],branco_intenso
 
 l7:
 		CALL	cursor
     	MOV     AL,[BX+paused_mens]
 		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
+    	INC     BX					
+		INC		DL					
     	LOOP    l7
 
         CALL    debounce
 
+;Verifica se o usuario pressionou a tecla 'p'
 wait_paused_menu:
         MOV     AH, [pressed_keys+4]
 		CMP		AH, 49
+		;Se nao, fica travado em loop esperando por essa acao do usuario
 		JNE		wait_paused_menu	
+		;Se sim, retoma o jogo
 		JMP		quit_pause
 
 quit_pause:
-	;Escrever uma mensagem
-        MOV     CX,7				;número de caracteres
+		;Apaga a mensagem de pausa da tela, sobrescrevendo-a com preto
+        MOV     CX,7				
     	MOV     BX,0
-    	MOV     DH,14				;linha 0-29
-    	MOV     DL,36				;coluna 0-79
+    	MOV     DH,14				
+    	MOV     DL,36				
 		MOV		byte[cor],pRETo
 
 l8:
 		CALL	cursor
     	MOV     AL,[BX+paused_mens]
 		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
+    	INC     BX					
+		INC		DL					
     	LOOP    l8
 
+		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
         CALL    debounce
 
         RET
+;========================================== PAUSE MENU ==========================================
 
-;===================== QUIT MENU
+;========================================== QUIT MENU ==========================================
+;Funcao que escreve uma mensagem de quit simples na tela e fica a espera da decisao do usuario de finalizar ou nao o jogo
 exit_menu:
-	;Escrever uma mensagem
-    	MOV     CX,22				;número de caracteres
+		;Escreve a mensagem de quit, perguntando ao usuario se ele realmente deseja finalizar o jogo
+    	MOV     CX,22				
     	MOV     BX,0
-    	MOV     DH,14				;linha 0-29
-    	MOV     DL,30				;coluna 0-79
+    	MOV     DH,14				
+    	MOV     DL,30				
 		MOV		byte[cor],branco_intenso
 l4:
 		CALL	cursor
     	MOV     AL,[BX+mens_exit]
 		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
+    	INC     BX					
+		INC		DL					
 	
     	LOOP    l4
 
+		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
         CALL    debounce
 
 wait_exit_input:
-		; Esperar entrada do usuário
+		;Verifica se o usuario pressionou a tecla 'y' (no caso, se ele decidiu encerrar o jogo)
 		MOV     AH, [pressed_keys+5]
         CMP     AH, 49
 		JE      exit
+
+		;Verifica se o usuario pressionou a tecla 'n' (no caso, se ele decidiu nao encerrar o jogo)
 		MOV     AH, [pressed_keys+6]
         CMP     AH, 49
 		JE      clear_exit_screen
-		JMP     wait_exit_input          ; Volta para aguardar entrada válida
+
+		;Se nenhuma das teclas foi pressionada, volta o loop e fica a espera da decisao do usuario
+		JMP     wait_exit_input          
 
 clear_exit_screen:
-	;apaga uma mensagem
+		;Apaga a mensagem de quit da tela, sobrescrevendo-a com preto
     	MOV     CX,22				;número de caracteres
     	MOV     BX,0
     	MOV     DH,14				;linha 0-29
@@ -445,17 +503,21 @@ l5:
 		CALL	cursor
     	MOV     AL,[BX+mens_exit]
 		CALL	caracter
-    	INC     BX					;proximo caracter
-		INC		DL					;avanca a coluna
+    	INC     BX					
+		INC		DL					
 	
     	LOOP    l5
 
+		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
 		CALL    debounce
 
         RET
+;========================================== QUIT MENU ==========================================
 
-;===================== EXIT
+;========================================== EXIT ==========================================
+;Realiza a finalizacao do programa
 exit:	
+		;Desinstala a interrupcao INT 9h e restaura os valores originais
 		PUSH 	ES
 		MOV 	AX, 0
 		MOV 	ES, AX
@@ -467,168 +529,17 @@ exit:
 		STI
 		POP 	ES
 		
+		;Sai do modo grafico
 		MOV  	AH,0   				; set video mode
 	    MOV  	AL,[modo_anterior] 	; modo anterior
 	    INT  	10h
+
+		;Finaliza o programa
 		MOV     AX,4C00h
 		INT     21h
+;========================================== EXIT ==========================================
 
-;===================== TRATAMENTO DE INTERRUPCOES
-key_handler:
-			PUSH    ES
-			PUSH    AX
-			PUSH    BX
-			MOV     AX, ds
-			MOV     es, AX
-			IN      al, 60h
-
-			MOV     BH, AL
-			IN      AL, 061h       
-			MOV     BL, AL
-			OR      AL, 080h
-			OUT     061h, AL     
-			MOV     AL, BL
-			OUT     061h, AL 
-			MOV     AL, BH
-			
-			CMP     AL, 0e0h
-			JZ      .ignore
-			MOV     AH, 0
-			MOV     BX, AX
-			and     BL, 01111111b
-			and     AL, 10000000b
-			CMP     AL, 10000000b
-			JZ      .key_released_jmp
-		.key_pressed:
-			CMP     BL, 72
-            JE      .set_key_1
-            CMP     BL, 80
-            JE      .set_key_2
-            CMP     BL, 17
-            JE      .set_key_3
-            CMP     BL, 31
-            JE      .set_key_4
-            CMP     BL, 25
-            JE      .set_key_5
-            CMP     BL, 21
-            JE      .set_key_6
-            CMP     BL, 49
-            JE      .set_key_7
-            CMP     BL, 16
-            JE      .set_key_8
-            CMP     BL, 28
-            JE      .set_key_9
-			JMP     .ignore
-
-        .ignore:
-            MOV     AL, 20h
-			OUT     20h, AL
-			POP     BX
-			POP     AX
-			POP     ES
-			IRET 
-
-        .key_released_jmp:
-            JMP     .key_released
-
-        .set_key_1:
-            MOV     byte[pressed_keys], 49
-            JMP     .ignore
-        .set_key_2:
-            MOV     byte[pressed_keys+1], 49
-            JMP     .ignore
-        .set_key_3:
-            MOV     byte[pressed_keys+2], 49
-            JMP     .ignore
-        .set_key_4:
-            MOV     byte[pressed_keys+3], 49
-            JMP     .ignore
-        .set_key_5:
-            MOV     byte[pressed_keys+4], 49
-            JMP     .ignore
-        .set_key_6:
-            MOV     byte[pressed_keys+5], 49
-            JMP     .ignore
-        .set_key_7:
-            MOV     byte[pressed_keys+6], 49
-            JMP     .ignore
-        .set_key_8:
-            MOV     byte[pressed_keys+7], 49
-            JMP     .ignore
-        .set_key_9:
-            MOV     byte[pressed_keys+8], 49
-            JMP     .ignore
-
-		.key_released:
-			CMP     BL, 72
-            JE      .unset_key_1
-            CMP     BL, 80
-            JE      .unset_key_2
-            CMP     BL, 17
-            JE      .unset_key_3
-            CMP     BL, 31
-            JE      .unset_key_4
-            CMP     BL, 25
-            JE      .unset_key_5
-            CMP     BL, 21
-            JE      .unset_key_6
-            CMP     BL, 49
-            JE      .unset_key_7
-            CMP     BL, 16
-            JE      .unset_key_8
-            CMP     BL, 28
-            JE      .unset_key_9
-            JMP     .ignore2
-
-        .ignore2:
-            MOV     AL, 20h
-			OUT     20h, AL
-			POP     BX
-			POP     AX
-			POP     ES
-			IRET 
-
-        .unset_key_1:
-            MOV     byte[pressed_keys], 48
-            JMP     .ignore2
-        .unset_key_2:
-            MOV     byte[pressed_keys+1], 48
-            JMP     .ignore2
-        .unset_key_3:
-            MOV     byte[pressed_keys+2], 48
-            JMP     .ignore2
-        .unset_key_4:
-            MOV     byte[pressed_keys+3], 48
-            JMP     .ignore2
-        .unset_key_5:
-            MOV     byte[pressed_keys+4], 48
-            JMP     .ignore2
-        .unset_key_6:
-            MOV     byte[pressed_keys+5], 48
-            JMP     .ignore2
-        .unset_key_7:
-            MOV     byte[pressed_keys+6], 48
-            JMP     .ignore2
-        .unset_key_8:
-            MOV     byte[pressed_keys+7], 48
-            JMP     .ignore2
-        .unset_key_9:
-            MOV     byte[pressed_keys+8], 48
-            JMP     .ignore2
-disable_int9:
-            PUSH    ES
-			MOV     AX, 0
-			MOV     ES, AX
-			CLI
-			MOV     AX, [int9_original_offset]
-			MOV     [ES:4 * 9], AX
-			MOV     AX, [int9_original_segment]
-			MOV     [ES:4 * 9 + 2], AX
-			STI
-			POP     ES
-			RET
-
-;*******************************************************************
+;========================================== DATA ==========================================
 segment data
 
 cor		db		branco_intenso
@@ -650,10 +561,10 @@ magenta_claro	equ		13	; 1 1 0 1 magenta claro
 amarelo			equ		14	; 1 1 1 0 amarelo
 branco_intenso	equ		15	; 1 1 1 1 branco INTenso
 
-modo_anterior	db		0
+modo_anterior	db		0   ;Modo anterior (saida do modo grafico)
 linha   		dw  	0
 coluna  		dw  	0
-deltAX			dw		0
+deltax			dw		0
 deltay			dw		0	
 
 mens_new		db		'Gostaria de iniciar uma nova partida? y/n'
@@ -689,26 +600,28 @@ raquete_y2_1	dw		301
 raquete_y_2		dw		220
 raquete_y2_2	dw		301
 
-vel				dw		10
-posX			dw		320
-posY			dw		240
-dirX			dw		0
-dirY			dw		0
+vel				dw		10		;Velocidade da bolinha
+posX			dw		320		;Posicao da bolinha no eixo X
+posY			dw		240		;Posicao da bolinha no eixo Y
+dirX			dw		0		;Direcao atual da bolinha no eixo X
+dirY			dw		0		;Direcao atual da bolinha no eixo Y
 
-raquete_1		dw		0
-raquete_2		dw		0
+raquete_1		dw		0		
+raquete_2		dw		0		
 
-paused_mens		db 		'Pausado'
+paused_mens		db 		'Pausado'	;Mensagem de pausa
 
 int9_original_offset	dw 0
 int9_original_segment	dw 0
-; UP DOWN W S P Y N Q Enter
+
+;Vetor de teclas pressionadas, na seguinte ordem: UP DOWN W S P Y N Q Enter
 pressed_keys            db '000000000'
 
+;Vetores de paredes que estao ativas em ambos os lados
 on_obstacles_right 		db '11111'
 on_obstacles_left 		db '11111'
+;========================================== DATA ==========================================
 
-;*************************************************************************
 segment stack stack
 	resb	512
 stacktop:

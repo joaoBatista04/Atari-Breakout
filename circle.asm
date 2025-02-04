@@ -85,7 +85,7 @@ plotar:
 	MOV		SI,BX
 	SUB		SI,CX
 	PUSH    SI						;coloca a ordenada yc-y na pilha
-	CALL plot_xy					;toma conta do s�timo octante
+	CALL plot_xy					;toma conta do setimo octante
 	MOV		SI,AX
 	ADD		SI,CX
 	PUSH    SI						;coloca a abcisa xc+y na pilha
