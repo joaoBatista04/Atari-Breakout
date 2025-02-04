@@ -457,7 +457,8 @@ l4:
 	
     	LOOP    l4							;repete
 
-        CALL    debounce					;debounce
+		;Faz um delay de debounce para dar tempo de o usuario retirar o dedo da tecla ate entao pressionada
+        CALL    debounce					
 
 wait_exit_input:
 		; Esperar entrada do usuário
@@ -512,201 +513,9 @@ exit:
 		
 		MOV     AX,4C00h						;termina o programa
 		INT     21h								;chama DOS
+;========================================== EXIT ==========================================
 
-;===================== TRATAMENTO DE INTERRUPCOES
-key_handler:
-			PUSH    ES			
-			PUSH    AX			
-			PUSH    BX			
-			MOV     AX, ds				;Coloca o segmento de dados em AX
-			MOV     es, AX				;Coloca o segmento de dados em ES
-			IN      al, 60h				;Lê a porta 60h
-
-			MOV     BH, AL				;Salva AL em BH
-			IN      AL, 061h    		;Lê a porta 61h
-			MOV     BL, AL				;Salva AL em BL
-			OR      AL, 080h			;Liga o bit 7
-			OUT     061h, AL    		;Escreve na porta 61h
-			MOV     AL, BL				;Coloca BL em AL
-			OUT     061h, AL 			;Escreve na porta 61h
-			MOV     AL, BH				;Coloca BH em AL
-			
-			CMP     AL, 0e0h			;Verifica se a tecla foi pressionada
-			JZ      .ignore				;Se não foi, ignora
-			MOV     AH, 0				;Se foi, coloca 0 em AH
-			MOV     BX, AX				;Coloca AX em BX
-			and     BL, 01111111b		
-			and     AL, 10000000b
-			CMP     AL, 10000000b
-			JZ      .key_released_jmp	;Se a tecla foi solta, pula para key_released
-		
-		.key_pressed:
-			CMP     BL, 72				;Verifica se a tecla UP foi pressionada
-            JE      .set_key_1			;Se foi, pula para set_key_1
-
-            CMP     BL, 80				;Verifica se a tecla DOWN foi pressionada
-            JE      .set_key_2			;Se foi, pula para set_key_2
-
-            CMP     BL, 17				;Verifica se a tecla W foi pressionada
-            JE      .set_key_3			;Se foi, pula para set_key_3
-
-            CMP     BL, 31				;Verifica se a tecla S foi pressionada
-            JE      .set_key_4			;Se foi, pula para set_key_4
-
-            CMP     BL, 25				;Verifica se a tecla P foi pressionada
-            JE      .set_key_5			;Se foi, pula para set_key_5
-
-            CMP     BL, 21				;Verifica se a tecla Y foi pressionada
-            JE      .set_key_6			;Se foi, pula para set_key_6
-
-            CMP     BL, 49				;Verifica se a tecla N foi pressionada
-            JE      .set_key_7			;Se foi, pula para set_key_7	
-
-            CMP     BL, 16				;Verifica se a tecla Q foi pressionada
-            JE      .set_key_8			;Se foi, pula para set_key_8
-
-            CMP     BL, 28				;Verifica se a tecla ENTER foi pressionada
-            JE      .set_key_9			;Se foi, pula para set_key_9
-			
-			JMP     .ignore				;Se não foi nenhuma das teclas, ignora
-
-        .ignore:
-            MOV     AL, 20h				;Coloca	20h em AL
-			OUT     20h, AL				;Escreve em 20h
-			POP     BX
-			POP     AX
-			POP     ES
-			IRET 						;Retorna da interrupção
-
-        .key_released_jmp:
-            JMP     .key_released		;Pula para key_released
-
-        .set_key_1:
-            MOV     byte[pressed_keys], 49		;Coloca 1 em pressed_keys (UP)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_2:
-            MOV     byte[pressed_keys+1], 49	;Coloca 1 em pressed_keys+1 (DOWN)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_3:
-            MOV     byte[pressed_keys+2], 49	;Coloca 1 em pressed_keys+2 (W)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_4:
-            MOV     byte[pressed_keys+3], 49	;Coloca 1 em pressed_keys+3 (S)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_5:
-            MOV     byte[pressed_keys+4], 49	;Coloca 1 em pressed_keys+4 (P)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_6:
-            MOV     byte[pressed_keys+5], 49	;Coloca 1 em pressed_keys+5 (Y)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_7:
-            MOV     byte[pressed_keys+6], 49	;Coloca 1 em pressed_keys+6 (N)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_8:
-            MOV     byte[pressed_keys+7], 49	;Coloca 1 em pressed_keys+7 (Q)
-            JMP     .ignore						;Pula para ignore
-
-        .set_key_9:
-            MOV     byte[pressed_keys+8], 49	;Coloca 1 em pressed_keys+8 (ENTER)
-            JMP     .ignore						;Pula para ignore
-
-
-		.key_released:
-
-			CMP     BL, 72						;Verifica se a tecla UP foi solta
-            JE      .unset_key_1				;Se foi, pula para unset_key_1
-
-            CMP     BL, 80						;Verifica se a tecla DOWN foi solta
-            JE      .unset_key_2				;Se foi, pula para unset_key_2
-
-            CMP     BL, 17						;Verifica se a tecla W foi solta
-            JE      .unset_key_3				;Se foi, pula para unset_key_3
-
-            CMP     BL, 31						;Verifica se a tecla S foi solta
-            JE      .unset_key_4				;Se foi, pula para unset_key_4
-
-            CMP     BL, 25						;Verifica se a tecla P foi solta
-            JE      .unset_key_5				;Se foi, pula para unset_key_5
-
-            CMP     BL, 21						;Verifica se a tecla Y foi solta
-            JE      .unset_key_6				;Se foi, pula para unset_key_6
-
-            CMP     BL, 49						;Verifica se a tecla N foi solta
-            JE      .unset_key_7				;Se foi, pula para unset_key_7
-
-            CMP     BL, 16						;Verifica se a tecla Q foi solta
-            JE      .unset_key_8				;Se foi, pula para unset_key_8
-
-            CMP     BL, 28						;Verifica se a tecla ENTER foi solta
-            JE      .unset_key_9				;Se foi, pula para unset_key_9
-
-            JMP     .ignore2					;Se não foi nenhuma das teclas, ignora
-
-        .ignore2:
-            MOV     AL, 20h						;Coloca 20h em AL
-			OUT     20h, AL						;Escreve em 20h
-			POP     BX
-			POP     AX
-			POP     ES
-			IRET 								;Retorna da interrupção
-
-        .unset_key_1:
-            MOV     byte[pressed_keys], 48		;Coloca 0 em pressed_keys (UP)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_2:
-            MOV     byte[pressed_keys+1], 48	;Coloca 0 em pressed_keys+1 (DOWN)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_3:
-            MOV     byte[pressed_keys+2], 48	;Coloca 0 em pressed_keys+2 (W)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_4:
-            MOV     byte[pressed_keys+3], 48	;Coloca 0 em pressed_keys+3 (S)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_5:
-            MOV     byte[pressed_keys+4], 48	;Coloca 0 em pressed_keys+4 (P)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_6:
-            MOV     byte[pressed_keys+5], 48	;Coloca 0 em pressed_keys+5 (Y)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_7:
-            MOV     byte[pressed_keys+6], 48	;Coloca 0 em pressed_keys+6 (N)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_8:
-            MOV     byte[pressed_keys+7], 48	;Coloca 0 em pressed_keys+7 (Q)
-            JMP     .ignore2					;Pula para ignore2
-
-        .unset_key_9:
-            MOV     byte[pressed_keys+8], 48	;Coloca 0 em pressed_keys+8 (ENTER)
-            JMP     .ignore2					;Pula para ignore2
-
-disable_int9:
-            PUSH    ES							
-			MOV     AX, 0
-			MOV     ES, AX							;Coloca 0 em ES
-			CLI										;Desabilita interrupções
-			MOV     AX, [int9_original_offset]		;Pega o offset do vetor de interrupção
-			MOV     [ES:4 * 9], AX					;Coloca o offset do vetor de interrupção em ES
-			MOV     AX, [int9_original_segment]		;Pega o segmento do vetor de interrupção
-			MOV     [ES:4 * 9 + 2], AX				;Coloca o segmento do vetor de interrupção em ES
-			STI										;Habilita interrupções
-			POP     ES
-			RET
-
-;*******************************************************************
+;========================================== DATA ==========================================
 segment data
 
 cor		db		branco_intenso
@@ -752,6 +561,7 @@ dif_col_pos		dw		26
 
 select_arrow	db		'>'			;seta de seleção
 
+;Variaveis utilizadas para desenhar as paredes e verificar a posicao deles quando a bolinha colide
 obstacle_y		dw		5
 obstacle_y2		dw		86
 obstacle_x		dw		5
@@ -760,11 +570,11 @@ obstacle_x2		dw		30
 arrow_line_pos	dw		14			;posição da linha da seta	
 arrow_col_pos	dw		24			;posição da coluna da seta
 
-raquete_y_1		dw		220
-raquete_y2_1	dw		301
+raquete_y_1		dw		220			;Limite inferior atual da raquete da direita
+raquete_y2_1	dw		301			;Limite superior atual da raquete da direita
 
-raquete_y_2		dw		220
-raquete_y2_2	dw		301			
+raquete_y_2		dw		220			;Limite inferior atual da raquete da esquerda
+raquete_y2_2	dw		301			;Limite superior atual da raquete da esquerda
 
 vel				dw		10		;Velocidade da bolinha
 posX			dw		320		;Posicao da bolinha no eixo X
@@ -772,11 +582,12 @@ posY			dw		240		;Posicao da bolinha no eixo Y
 dirX			dw		0		;Direcao atual da bolinha no eixo X
 dirY			dw		0		;Direcao atual da bolinha no eixo Y
 
-raquete_1		dw		0		
+raquete_1		dw		0
 raquete_2		dw		0		
 
 paused_mens		db 		'Pausado'	;Mensagem de pausa
 
+;Segmente e offset original do tratamento de interrupcoes
 int9_original_offset	dw 0
 int9_original_segment	dw 0
 
