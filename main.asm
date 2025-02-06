@@ -718,11 +718,14 @@ amarelo			equ		14	; 1 1 1 0 amarelo
 branco_intenso	equ		15	; 1 1 1 1 branco INTenso
 
 modo_anterior	db		0   ;Modo anterior (saida do modo grafico)
+
+;Variaveis auxiliares para construcao do jogo
 linha   		dw  	0
 coluna  		dw  	0
 deltax			dw		0
 deltay			dw		0	
 
+;Mensagens a serem exibidas em comandos específicos do jogo
 mens_new		db		'Gostaria de iniciar uma nova partida? y/n'		;mensagem de novo jogo
 mens_exit    	db  	'Deseja mesmo sair? y/n'						;mensagem de saida
 mens_intro		db 		'Selecione a dificuldade do jogo:'				;mensagem de introdução
@@ -731,7 +734,9 @@ mens_medio		db		'Medio'
 mens_dificil	db		'Dificil'
 mens_game		db		'GAME'
 mens_over		db		'OVER'
+paused_mens		db 		'Pausado'	;Mensagem de pausa
 
+;Posicao das mensagens a serem exibidas em comandos específicos do jogo
 facil_line_pos	dw		14
 facil_col_pos	dw		26
 medio_line_pos	dw		16
@@ -739,6 +744,7 @@ medio_col_pos	dw		26
 dif_line_pos	dw		18
 dif_col_pos		dw		26
 
+;Botao de selecao para o menu de dificuldades
 select_arrow	db		'>'			;seta de seleção
 
 ;Variaveis utilizadas para desenhar as paredes e verificar a posicao deles quando a bolinha colide
@@ -762,10 +768,9 @@ posY			dw		240		;Posicao da bolinha no eixo Y
 dirX			dw		0		;Direcao atual da bolinha no eixo X
 dirY			dw		0		;Direcao atual da bolinha no eixo Y
 
+;Variaveis auxiliares para impressao das raquetes
 raquete_1		dw		0
 raquete_2		dw		0		
-
-paused_mens		db 		'Pausado'	;Mensagem de pausa
 
 ;Segmente e offset original do tratamento de interrupcoes
 int9_original_offset	dw 0
