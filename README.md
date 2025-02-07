@@ -5,7 +5,7 @@
 Este jogo é uma reprodução e mistura dos consagrados jogos Breakout e Pong. O jogo é jogado em duplas e cada jogador tem o objetivo de evitar que a bolinha saia dos limites do seu campo. Além disso, cada jogador deverá proteger também suas paredes, que fornecerão proteção extra para a bolinha. Tudo isso ao mesmo tempo em que tenta quebrar as paredes do jogador adversário e fazer com que a bolinha saia pelo outro lado. Feito como atividade avaliativa da disciplina de Sistemas Embarcados I, da Universidade Federal do Espírito Santo.
 
 <p align="center" style="display: flex; align-items: center; justify-content: center;">
-  <img src="./game.png" alt="Image 1" width="300" style="border:1px solid white;width:1000px;"/>
+  <img src="./breakout/game.png" alt="Image 1" width="300" style="border:1px solid white;width:1000px;"/>
 </p>
 
 ## 🫂 Colaboradores
