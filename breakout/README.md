@@ -36,7 +36,7 @@ Este jogo é uma reprodução e mistura dos consagrados jogos Breakout e Pong. O
     ```sh
     cd breakout
 
-3. Compile os códigos utilizando o utilitário Make, que chamará o compilador Nasm e o linker Freelink
+3. Compile os códigos utilizando o utilitário Make, que chamará o compilador Nasm e o linker Freelink. A compilação levará alguns instantes.
     ```sh
     make
 
