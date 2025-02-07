@@ -50,12 +50,12 @@ Selecione a dificuldade do jogo entre fácil, médio e difícil, navegando pelas
 
 <br>
 
-O jogador 1 controla a raquete de cor magenta, utilizando as teclas `w` e `s`. O jogador 2 controla a raquete de cor azul, utilizando as `setas para cima e para baixo`.
+O jogador 1 controla a raquete de cor magenta, utilizando as teclas `W` e `S`. O jogador 2 controla a raquete de cor azul, utilizando as `setas para cima (↑) e para baixo (↓)`.
 
 <br>
 
-O jogo pode ser pausado a qualquer momento pressionando-se a tecla `p`. Para retomar o jogo, basta apertar novamente a mesma tecla. O jogo também poderá ser encerrado a qualquer momento, pressionando-se a tecla `q`. Um menu aparecerá questionando se o jogador realmente quer encerrar a partida. Pressione `y` para encerrar e `n` se quiser continuar jogando.
+O jogo pode ser pausado a qualquer momento pressionando-se a tecla `P`. Para retomar o jogo, basta apertar novamente a mesma tecla. O jogo também poderá ser encerrado a qualquer momento, pressionando-se a tecla `Q`. Um menu aparecerá questionando se o jogador realmente quer encerrar a partida. Pressione `Y` para encerrar e `N` se quiser continuar jogando.
 
 <br>
 
-Se a bolinha sair por algum dos limites laterais, uma mensagem de game over irá aparece junto com um menu de confirmação se os jogadores desejam iniciar uma nova partida ou encerrar o jogo. Pressione `y` para dar restart ao jogo e `n` para encerrar.
+Se a bolinha sair por algum dos limites laterais, uma mensagem de game over irá aparece junto com um menu de confirmação se os jogadores desejam iniciar uma nova partida ou encerrar o jogo. Pressione `Y` para dar restart ao jogo e `N` para encerrar.
