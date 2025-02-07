@@ -46,7 +46,7 @@ Este jogo é uma reprodução e mistura dos consagrados jogos Breakout e Pong. O
 
 ## 🎲 Como Jogar
 
-Selecione a dificuldade do jogo entre fácil, médio e difícil, navegando pelas opções por meio das setas para cima e para baixo do teclado. Seleciona a dificuldade escolhida pressionando a tecla Enter. O jogo então terá início.
+Selecione a dificuldade do jogo entre fácil, médio e difícil, navegando pelas opções por meio das `setas para cima (↑) e para baixo (↓)` do teclado. Seleciona a dificuldade escolhida pressionando a tecla `Enter`. O jogo então terá início.
 
 <br>
 
